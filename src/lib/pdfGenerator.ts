@@ -23,8 +23,8 @@ const BOX_BG: [number, number, number] = [248, 250, 252];
 const BOX_BORDER: [number, number, number] = [226, 232, 240];
 
 const MARGIN_X = 16;
-const LOGO_MAX_W = 26;
-const LOGO_MAX_H = 18;
+const LOGO_MAX_W = 38;
+const LOGO_MAX_H = 26;
 
 async function urlToDataUrl(url: string): Promise<string | null> {
   try {
