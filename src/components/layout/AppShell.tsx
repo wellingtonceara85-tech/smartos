@@ -96,6 +96,10 @@ export function AppShell({ title, children }: AppShellProps) {
         <nav className="relative flex flex-col gap-1 px-4 py-2">
           {navItems.map((item) => renderNavLink(item))}
         </nav>
+        <div className="relative mt-auto px-6 pb-5 pt-3">
+          <p className="text-[10px] font-medium tracking-widest text-slate-500 uppercase">SmartOS</p>
+          <p className="text-[10px] text-slate-600">Versão 1.0.0 RC1</p>
+        </div>
       </aside>
 
       <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)}>

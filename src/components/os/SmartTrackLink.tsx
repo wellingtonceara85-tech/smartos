@@ -9,7 +9,8 @@ interface SmartTrackLinkProps {
 
 export function SmartTrackLink({ token, clienteNome }: SmartTrackLinkProps) {
   const [copied, setCopied] = useState(false);
-  const link = `${window.location.origin}/track/${token}`;
+  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+  const link = `${window.location.origin}${base}/track/${token}`;
 
   async function handleCopy() {
     await navigator.clipboard.writeText(link);

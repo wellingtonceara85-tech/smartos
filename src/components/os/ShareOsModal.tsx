@@ -24,7 +24,8 @@ export function ShareOsModal({ ordem, empresaNome, ensurePdf, onClose }: ShareOs
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  const link = `${window.location.origin}/track/${ordem.token}`;
+  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+  const link = `${window.location.origin}${base}/track/${ordem.token}`;
 
   async function handleCopyLink() {
     await navigator.clipboard.writeText(link);

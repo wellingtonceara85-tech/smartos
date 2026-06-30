@@ -310,7 +310,8 @@ export async function generateOsPdf(ordem: OrdemServico, empresa: Empresa): Prom
   }
 
   // ── Rodapé: QR Code + link de acompanhamento ─────────────────────
-  const trackUrl = `${window.location.origin}/track/${ordem.token}`;
+  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+  const trackUrl = `${window.location.origin}${base}/track/${ordem.token}`;
   const footerHeight = 28;
   const bottomFooterY = pageHeight - footerHeight - 10;
   let footerY: number;
