@@ -37,12 +37,17 @@ export function ShareOsModal({ ordem, empresaNome, ensurePdf, onClose }: ShareOs
     window.open(link, "_blank");
   }
 
-  function handleWhatsApp() {
+  async function handleWhatsApp() {
+    setBusy(true);
+    setError("");
+    const result = await ensurePdf();
+    setBusy(false);
     const mensagem = buildOsConcluidaWhatsAppMessage({
       clienteNome: ordem.clienteNome,
       numero: formatOsNumero(ordem.numero),
       link,
       empresaNome,
+      pdfUrl: result?.url,
     });
     window.open(`https://wa.me/?text=${encodeURIComponent(mensagem)}`, "_blank");
   }
@@ -98,7 +103,7 @@ export function ShareOsModal({ ordem, empresaNome, ensurePdf, onClose }: ShareOs
           <ExternalLink size={16} />
           Abrir SmartTrack
         </Button>
-        <Button variant="ghost" className="w-full justify-start" onClick={handleWhatsApp}>
+        <Button variant="ghost" className="w-full justify-start" onClick={handleWhatsApp} loading={busy}>
           <MessageCircle size={16} />
           Enviar WhatsApp
         </Button>

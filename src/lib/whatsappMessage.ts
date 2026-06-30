@@ -3,6 +3,7 @@ interface WhatsAppMessageParams {
   numero: string;
   link: string;
   empresaNome: string;
+  pdfUrl?: string;
 }
 
 export function buildOsConcluidaWhatsAppMessage({
@@ -10,18 +11,22 @@ export function buildOsConcluidaWhatsAppMessage({
   numero,
   link,
   empresaNome,
+  pdfUrl,
 }: WhatsAppMessageParams): string {
-  return [
-    `Olá ${clienteNome}!`,
+  const lines = [
+    `Olá, ${clienteNome}! 👋`,
     "",
-    `Sua Ordem de Serviço ${numero} foi concluída.`,
+    `Sua Ordem de Serviço *${numero}* foi concluída. ✅`,
     "",
-    "Segue o acompanhamento:",
+    "📍 Acompanhe em tempo real:",
     link,
-    "",
-    "Em anexo encontra-se sua Ordem de Serviço em PDF.",
-    "",
-    "Obrigado pela preferência!",
-    empresaNome,
-  ].join("\n");
+  ];
+
+  if (pdfUrl) {
+    lines.push("", "📄 Baixe sua OS em PDF:", pdfUrl);
+  }
+
+  lines.push("", "Obrigado pela preferência!", `*${empresaNome}*`);
+
+  return lines.join("\n");
 }
