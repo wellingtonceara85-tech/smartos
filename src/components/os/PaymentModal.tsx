@@ -99,7 +99,7 @@ export function PaymentModal({ onClose, onConfirm }: PaymentModalProps) {
               if (errors.forma) setErrors((p) => ({ ...p, forma: "" }));
             }}
             disabled={saving}
-            className="h-9 rounded-md border border-slate-200 px-3 text-sm text-slate-900"
+            className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-900 outline-none transition-all duration-150 hover:border-slate-300 focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15"
           >
             <option value="">Selecione</option>
             {FORMAS_PAGAMENTO.map((forma) => (
@@ -125,7 +125,7 @@ export function PaymentModal({ onClose, onConfirm }: PaymentModalProps) {
               if (errors.data) setErrors((p) => ({ ...p, data: "" }));
             }}
             disabled={saving}
-            className="h-9 rounded-md border border-slate-200 px-3 text-sm text-slate-900"
+            className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-900 outline-none transition-all duration-150 hover:border-slate-300 focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15"
           />
           {errors.data && <p className="text-xs text-[#DC2626]">{errors.data}</p>}
         </div>

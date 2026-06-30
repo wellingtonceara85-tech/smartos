@@ -18,8 +18,13 @@ const ACCENT: [number, number, number] = [37, 99, 235];
 const ACCENT_DARK: [number, number, number] = [29, 78, 216];
 const INK: [number, number, number] = [15, 23, 42];
 const MUTED: [number, number, number] = [100, 116, 139];
+const LABEL_GRAY: [number, number, number] = [100, 116, 139];
 const BOX_BG: [number, number, number] = [248, 250, 252];
 const BOX_BORDER: [number, number, number] = [226, 232, 240];
+
+const MARGIN_X = 16;
+const LOGO_MAX_W = 26;
+const LOGO_MAX_H = 18;
 
 async function urlToDataUrl(url: string): Promise<string | null> {
   try {
@@ -44,41 +49,61 @@ function dataUrlFormat(dataUrl: string): "PNG" | "JPEG" {
 interface FieldDef {
   label: string;
   value: string | undefined;
+  /** Campo de texto longo: ocupa a linha inteira em vez de dividir em 2 colunas. */
+  full?: boolean;
 }
 
 export async function generateOsPdf(ordem: OrdemServico, empresa: Empresa): Promise<jsPDF> {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const marginX = 16;
-  const contentWidth = pageWidth - marginX * 2;
-  const footerReserve = 34;
+  const contentWidth = pageWidth - MARGIN_X * 2;
+  const footerReserve = 36;
   let y = 0;
 
   function ensureSpace(needed: number) {
     if (y + needed > pageHeight - footerReserve) {
       doc.addPage();
-      y = 14;
+      y = 16;
     }
   }
 
-  // ── Faixa de destaque no topo ────────────────────────────────────────
-  doc.setFillColor(...ACCENT);
-  doc.rect(0, 0, pageWidth, 3, "F");
-  y = 14;
+  function topBar() {
+    doc.setFillColor(...ACCENT);
+    doc.rect(0, 0, pageWidth, 3, "F");
+  }
 
-  // ── Cabeçalho: logo + dados da empresa | número da OS + status ──────
+  topBar();
+  y = 16;
+
+  // ── Cabeçalho: logo (proporção original preservada) + dados da empresa ──
   const logoDataUrl = empresa.logoUrl ? await urlToDataUrl(empresa.logoUrl) : null;
   const headerTop = y;
+  let logoDrawnWidth = 0;
+
   if (logoDataUrl) {
     try {
-      doc.addImage(logoDataUrl, dataUrlFormat(logoDataUrl), marginX, headerTop, 22, 22, undefined, "FAST");
+      const props = doc.getImageProperties(logoDataUrl);
+      const ratio = props.width / props.height;
+      let w = LOGO_MAX_W;
+      let h = w / ratio;
+      if (h > LOGO_MAX_H) {
+        h = LOGO_MAX_H;
+        w = h * ratio;
+      }
+      // Centraliza verticalmente o logo no bloco de cabeçalho (~22mm de altura útil).
+      const logoY = headerTop + Math.max(0, (22 - h) / 2);
+      doc.addImage(logoDataUrl, dataUrlFormat(logoDataUrl), MARGIN_X, logoY, w, h, undefined, "FAST");
+      logoDrawnWidth = w;
     } catch {
-      // logo em formato não suportado pelo jsPDF — segue sem ela
+      // logo em formato não suportado pelo jsPDF — segue exibindo só o nome da empresa
+      logoDrawnWidth = 0;
     }
   }
 
-  const textX = logoDataUrl ? marginX + 28 : marginX;
+  const textX = logoDrawnWidth > 0 ? MARGIN_X + logoDrawnWidth + 6 : MARGIN_X;
+  const textMaxWidth = pageWidth * 0.55 - (textX - MARGIN_X);
+
   doc.setFont("helvetica", "bold");
   doc.setFontSize(15);
   doc.setTextColor(...INK);
@@ -93,7 +118,7 @@ export async function generateOsPdf(ordem: OrdemServico, empresa: Empresa): Prom
     infoY += 5;
   }
   if (empresa.endereco) {
-    const enderecoLines = doc.splitTextToSize(empresa.endereco, contentWidth * 0.5);
+    const enderecoLines = doc.splitTextToSize(empresa.endereco, textMaxWidth);
     doc.text(enderecoLines, textX, infoY);
     infoY += enderecoLines.length * 5;
   }
@@ -101,67 +126,110 @@ export async function generateOsPdf(ordem: OrdemServico, empresa: Empresa): Prom
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
   doc.setTextColor(...MUTED);
-  doc.text("ORDEM DE SERVIÇO", pageWidth - marginX, headerTop + 4, { align: "right" });
+  doc.text("ORDEM DE SERVIÇO", pageWidth - MARGIN_X, headerTop + 4, { align: "right" });
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
   doc.setTextColor(...ACCENT);
-  doc.text(formatOsNumero(ordem.numero), pageWidth - marginX, headerTop + 13, { align: "right" });
+  doc.text(formatOsNumero(ordem.numero), pageWidth - MARGIN_X, headerTop + 13, { align: "right" });
 
   const statusColor = STATUS_COLORS[OS_STATUS_VARIANT[ordem.status]] ?? STATUS_COLORS.neutral;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8.5);
   const statusLabel = ordem.status.toUpperCase();
   const statusWidth = doc.getTextWidth(statusLabel) + 8;
-  doc.setFillColor(statusColor[0], statusColor[1], statusColor[2]);
-  doc.roundedRect(pageWidth - marginX - statusWidth, headerTop + 17, statusWidth, 6, 3, 3, "F");
+  doc.setFillColor(...statusColor);
+  doc.roundedRect(pageWidth - MARGIN_X - statusWidth, headerTop + 17, statusWidth, 6.5, 3.25, 3.25, "F");
   doc.setTextColor(255, 255, 255);
-  doc.text(statusLabel, pageWidth - marginX - statusWidth / 2, headerTop + 21, { align: "center" });
+  doc.text(statusLabel, pageWidth - MARGIN_X - statusWidth / 2, headerTop + 21.3, { align: "center" });
 
-  y = Math.max(infoY, headerTop + 25) + 6;
+  y = Math.max(infoY, headerTop + 25, headerTop + 22) + 7;
   doc.setDrawColor(...BOX_BORDER);
   doc.setLineWidth(0.3);
-  doc.line(marginX, y, pageWidth - marginX, y);
+  doc.line(MARGIN_X, y, pageWidth - MARGIN_X, y);
   y += 8;
 
-  // ── Seções em caixas arredondadas com barra de destaque lateral ─────
-  function measureField(field: FieldDef, maxWidth: number) {
-    if (!field.value) return { lines: [] as string[], height: 0 };
-    const lines = doc.splitTextToSize(`${field.label}: ${field.value}`, maxWidth);
-    return { lines, height: lines.length * 5 + 1.5 };
+  // ── Seções em caixas arredondadas, campos em grid de até 2 colunas ───
+  const sectionPadX = 8;
+  const labelLineH = 4;
+  const valueLineH = 4.6;
+  const fieldGapY = 4;
+  const colGap = 8;
+
+  function layoutRows(fields: FieldDef[]): FieldDef[][] {
+    const usable = fields.filter((f) => !!f.value);
+    const rows: FieldDef[][] = [];
+    let pending: FieldDef | null = null;
+    for (const f of usable) {
+      if (f.full) {
+        if (pending) {
+          rows.push([pending]);
+          pending = null;
+        }
+        rows.push([f]);
+      } else if (pending) {
+        rows.push([pending, f]);
+        pending = null;
+      } else {
+        pending = f;
+      }
+    }
+    if (pending) rows.push([pending]);
+    return rows;
   }
 
   function renderSection(title: string, fields: FieldDef[]) {
-    const innerMaxWidth = contentWidth - 14;
-    const measured = fields.map((f) => measureField(f, innerMaxWidth));
-    const totalTextHeight = measured.reduce((sum, m) => sum + m.height, 0);
-    if (totalTextHeight === 0) return;
+    const rows = layoutRows(fields);
+    if (rows.length === 0) return;
 
-    const paddingTop = 10;
+    const innerWidth = contentWidth - sectionPadX * 2;
+    const halfWidth = (innerWidth - colGap) / 2;
+
+    const rowsMeasured = rows.map((row) => {
+      const cellWidth = row.length === 2 ? halfWidth : innerWidth;
+      const cells = row.map((field) => ({
+        field,
+        lines: doc.splitTextToSize(field.value ?? "", cellWidth),
+      }));
+      const rowHeight = Math.max(...cells.map((c) => labelLineH + c.lines.length * valueLineH));
+      return { cells, height: rowHeight, width: cellWidth };
+    });
+
+    const titleBlockHeight = 11;
     const paddingBottom = 6;
-    const boxHeight = paddingTop + totalTextHeight + paddingBottom;
+    const rowsHeight = rowsMeasured.reduce((sum, r) => sum + r.height + fieldGapY, 0) - fieldGapY;
+    const boxHeight = titleBlockHeight + rowsHeight + paddingBottom;
 
     ensureSpace(boxHeight + 4);
 
     doc.setFillColor(...BOX_BG);
     doc.setDrawColor(...BOX_BORDER);
     doc.setLineWidth(0.3);
-    doc.roundedRect(marginX, y, contentWidth, boxHeight, 2.5, 2.5, "FD");
+    doc.roundedRect(MARGIN_X, y, contentWidth, boxHeight, 2.5, 2.5, "FD");
     doc.setFillColor(...ACCENT);
-    doc.roundedRect(marginX, y, 2.4, boxHeight, 1.2, 1.2, "F");
+    doc.roundedRect(MARGIN_X, y, 2.4, boxHeight, 1.2, 1.2, "F");
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
     doc.setTextColor(...ACCENT_DARK);
-    doc.text(title.toUpperCase(), marginX + 8, y + 7);
+    doc.text(title.toUpperCase(), MARGIN_X + sectionPadX, y + 7.5);
 
-    let cy = y + paddingTop + 3;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(...INK);
-    for (const m of measured) {
-      if (m.lines.length === 0) continue;
-      doc.text(m.lines, marginX + 8, cy);
-      cy += m.height;
+    let cy = y + titleBlockHeight;
+    for (const row of rowsMeasured) {
+      let cx = MARGIN_X + sectionPadX;
+      for (const cell of row.cells) {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(7.5);
+        doc.setTextColor(...LABEL_GRAY);
+        doc.text(cell.field.label.toUpperCase(), cx, cy);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(...INK);
+        doc.text(cell.lines, cx, cy + labelLineH);
+
+        cx += row.width + colGap;
+      }
+      cy += row.height + fieldGapY;
     }
 
     y += boxHeight + 6;
@@ -176,6 +244,7 @@ export async function generateOsPdf(ordem: OrdemServico, empresa: Empresa): Prom
     { label: "Tipo", value: ordem.equipamentoTipo },
     { label: "Marca / Modelo", value: `${ordem.equipamentoMarca} ${ordem.equipamentoModelo}`.trim() },
     { label: "Número de série", value: ordem.equipamentoNumeroSerie },
+    { label: "Cor", value: ordem.equipamentoCor },
   ]);
 
   const valorFields: FieldDef[] = [];
@@ -189,15 +258,15 @@ export async function generateOsPdf(ordem: OrdemServico, empresa: Empresa): Prom
   }
 
   renderSection("Serviço", [
-    { label: "Defeito relatado", value: ordem.defeitoRelatado },
-    { label: "Diagnóstico / Serviço executado", value: ordem.diagnostico },
+    { label: "Defeito relatado", value: ordem.defeitoRelatado, full: true },
+    { label: "Diagnóstico / Serviço executado", value: ordem.diagnostico, full: true },
     ...valorFields,
   ]);
 
   if (ordem.garantia) {
     renderSection("Garantia", [
-      { label: "Válida até", value: formatDate(ordem.garantia.dataValidade) },
-      { label: "Termos", value: empresa.garantiaTexto },
+      { label: "Válida até", value: formatDate(ordem.garantia.dataValidade), full: true },
+      { label: "Termos", value: empresa.garantiaTexto, full: true },
     ]);
   }
 
@@ -205,15 +274,15 @@ export async function generateOsPdf(ordem: OrdemServico, empresa: Empresa): Prom
   if (ordem.fotos && ordem.fotos.length > 0) {
     const photoSize = 42;
     const gap = 6;
-    ensureSpace(photoSize + 16);
+    ensureSpace(photoSize + 18);
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
     doc.setTextColor(...ACCENT_DARK);
-    doc.text("FOTOS", marginX, y + 4);
-    y += 8;
+    doc.text("FOTOS", MARGIN_X, y + 4);
+    y += 9;
 
-    let x = marginX;
+    let x = MARGIN_X;
     for (const foto of ordem.fotos.slice(0, 3)) {
       const dataUrl = await urlToDataUrl(foto.url);
       doc.setDrawColor(...BOX_BORDER);
@@ -221,7 +290,16 @@ export async function generateOsPdf(ordem: OrdemServico, empresa: Empresa): Prom
       doc.roundedRect(x, y, photoSize, photoSize, 2, 2, "S");
       if (dataUrl) {
         try {
-          doc.addImage(dataUrl, dataUrlFormat(dataUrl), x + 0.8, y + 0.8, photoSize - 1.6, photoSize - 1.6, undefined, "FAST");
+          doc.addImage(
+            dataUrl,
+            dataUrlFormat(dataUrl),
+            x + 0.8,
+            y + 0.8,
+            photoSize - 1.6,
+            photoSize - 1.6,
+            undefined,
+            "FAST",
+          );
         } catch {
           // foto em formato não suportado — segue sem ela
         }
@@ -234,16 +312,24 @@ export async function generateOsPdf(ordem: OrdemServico, empresa: Empresa): Prom
   // ── Rodapé: QR Code + link de acompanhamento ─────────────────────
   const trackUrl = `${window.location.origin}/track/${ordem.token}`;
   const footerHeight = 28;
-  const footerY = pageHeight - footerHeight - 10;
+  const bottomFooterY = pageHeight - footerHeight - 10;
+  let footerY: number;
 
-  if (y > footerY - 4) {
+  if (y + footerHeight + 6 <= pageHeight - 10) {
+    // Cabe na página atual: ancora logo abaixo do conteúdo (nunca deixa um vão enorme),
+    // mas nunca acima da posição padrão do rodapé.
+    footerY = Math.max(y + 6, bottomFooterY);
+  } else {
     doc.addPage();
+    topBar();
+    y = 16;
+    footerY = bottomFooterY;
   }
 
   doc.setFillColor(...BOX_BG);
   doc.setDrawColor(...BOX_BORDER);
   doc.setLineWidth(0.3);
-  doc.roundedRect(marginX, footerY, contentWidth, footerHeight, 3, 3, "FD");
+  doc.roundedRect(MARGIN_X, footerY, contentWidth, footerHeight, 3, 3, "FD");
 
   try {
     const qrDataUrl = await QRCode.toDataURL(trackUrl, {
@@ -251,12 +337,12 @@ export async function generateOsPdf(ordem: OrdemServico, empresa: Empresa): Prom
       width: 240,
       color: { dark: "#0F172A", light: "#FFFFFF" },
     });
-    doc.addImage(qrDataUrl, "PNG", marginX + 6, footerY + 4, 20, 20);
+    doc.addImage(qrDataUrl, "PNG", MARGIN_X + 6, footerY + 4, 20, 20);
   } catch {
     // segue sem QR code se a geração falhar
   }
 
-  const footerTextX = marginX + 32;
+  const footerTextX = MARGIN_X + 32;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9.5);
   doc.setTextColor(...INK);
@@ -271,6 +357,18 @@ export async function generateOsPdf(ordem: OrdemServico, empresa: Empresa): Prom
   doc.setFontSize(7.5);
   doc.setTextColor(...MUTED);
   doc.text(`Gerado em ${new Date().toLocaleDateString("pt-BR")} · SmartOS`, footerTextX, footerY + 22);
+
+  // ── Numeração de página (só quando o documento tiver mais de 1 página) ──
+  const totalPages = doc.getNumberOfPages();
+  if (totalPages > 1) {
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.setTextColor(...MUTED);
+      doc.text(`Página ${i} de ${totalPages}`, pageWidth - MARGIN_X, pageHeight - 6, { align: "right" });
+    }
+  }
 
   return doc;
 }

@@ -63,8 +63,8 @@ export function NovaOS() {
 
   useEffect(() => {
     if (!empresaId) return;
-    getDocs(query(collection(db, "clientes"), where("empresaId", "==", empresaId))).then(
-      (snapshot) => {
+    getDocs(query(collection(db, "clientes"), where("empresaId", "==", empresaId)))
+      .then((snapshot) => {
         const list = snapshot.docs.map((docSnapshot) => ({
           id: docSnapshot.id,
           ...(docSnapshot.data() as Omit<Cliente, "id">),
@@ -77,8 +77,8 @@ export function NovaOS() {
             setClienteQuery(found.nome);
           }
         }
-      },
-    );
+      })
+      .catch(() => setFormError("Não foi possível carregar a lista de clientes. Tente recarregar a página."));
   }, [empresaId, preselectedClienteId]);
 
   const clienteResults = useMemo(() => {
@@ -222,7 +222,7 @@ export function NovaOS() {
           </h2>
 
           {selectedCliente ? (
-            <div className="flex items-center justify-between rounded-md border border-slate-200 bg-white px-4 py-3">
+            <div className="flex items-center justify-between rounded-lg border border-slate-200/70 bg-white px-4 py-3 shadow-sm">
               <div>
                 <p className="text-sm font-medium text-slate-900">{selectedCliente.nome}</p>
                 <p className="text-xs text-slate-500">{selectedCliente.telefone}</p>
@@ -232,7 +232,7 @@ export function NovaOS() {
               </Button>
             </div>
           ) : creatingCliente ? (
-            <div className="space-y-4 rounded-md border border-slate-200 bg-white p-4">
+            <div className="space-y-4 rounded-lg border border-slate-200/70 bg-white p-4 shadow-sm">
               <Input
                 id="novo-nome"
                 label="Nome"
@@ -282,7 +282,7 @@ export function NovaOS() {
                 disabled={saving}
               />
               {clienteQuery.trim().length >= 2 && (
-                <div className="mt-2 rounded-md border border-slate-200 bg-white">
+                <div className="mt-2 overflow-hidden rounded-lg border border-slate-200/70 bg-white shadow-sm">
                   {clienteResults.length > 0 ? (
                     clienteResults.map((cliente) => (
                       <button
@@ -323,7 +323,7 @@ export function NovaOS() {
                 value={equipamentoTipo}
                 onChange={(e) => setEquipamentoTipo(e.target.value)}
                 disabled={saving}
-                className="h-9 rounded-md border border-slate-200 px-3 text-sm text-slate-900"
+                className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-900 outline-none transition-all duration-150 hover:border-slate-300 focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15"
               >
                 <option value="">Selecione</option>
                 {equipmentList.map((type) => (

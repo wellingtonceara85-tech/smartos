@@ -188,7 +188,7 @@ export function OrdensList() {
             id="periodo"
             value={period}
             onChange={(e) => setPeriod(e.target.value as PeriodFilter)}
-            className="h-9 rounded-md border border-slate-200 px-3 text-sm text-slate-900"
+            className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-900 outline-none transition-all duration-150 hover:border-slate-300 focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15"
           >
             <option value="todos">Todos</option>
             <option value="hoje">Hoje</option>

@@ -58,14 +58,16 @@ export function ConfiguracaoEmpresa() {
   // Carrega campos não presentes no contexto: nome, cnpj, telefone, endereco
   useEffect(() => {
     if (!empresaId) return;
-    getDoc(doc(db, "empresas", empresaId)).then((snap) => {
-      const data = snap.data();
-      if (!data) return;
-      setNome(data.nome ?? "");
-      setCnpj(data.cnpj ?? "");
-      setTelefone(data.telefone ?? "");
-      setEndereco(data.endereco ?? "");
-    });
+    getDoc(doc(db, "empresas", empresaId))
+      .then((snap) => {
+        const data = snap.data();
+        if (!data) return;
+        setNome(data.nome ?? "");
+        setCnpj(data.cnpj ?? "");
+        setTelefone(data.telefone ?? "");
+        setEndereco(data.endereco ?? "");
+      })
+      .catch(() => setSaveError("Não foi possível carregar os dados da empresa. Tente recarregar a página."));
   }, [empresaId]);
 
   // Sincroniza contexto → estado local quando contexto carrega
@@ -298,7 +300,7 @@ export function ConfiguracaoEmpresa() {
             Tipos de Equipamento
           </h2>
           <div className="space-y-3">
-            <ul className="divide-y divide-slate-100 rounded-md border border-slate-200">
+            <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200">
               {tipos.map((tipo) => (
                 <li
                   key={tipo}
@@ -330,7 +332,7 @@ export function ConfiguracaoEmpresa() {
                   placeholder="Novo tipo…"
                   maxLength={50}
                   disabled={saving}
-                  className="h-9 flex-1 rounded-md border border-slate-200 px-3 text-sm text-slate-900 placeholder:text-slate-400"
+                  className="h-9 flex-1 rounded-lg border border-slate-200 px-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all duration-150 hover:border-slate-300 focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15"
                 />
                 <Button variant="ghost" onClick={handleAdicionarTipo} disabled={saving || !novoTipo.trim()}>
                   Adicionar
@@ -343,7 +345,7 @@ export function ConfiguracaoEmpresa() {
         </section>
 
         {/* Botões */}
-        <div className="flex gap-3">
+        <div className="flex items-center gap-4">
           <Button onClick={handleSave} loading={saving}>
             Salvar
           </Button>

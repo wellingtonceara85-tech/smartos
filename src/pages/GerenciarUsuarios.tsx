@@ -52,17 +52,18 @@ export function GerenciarUsuarios() {
       return;
     }
     setLoading(true);
-    getDocs(query(collection(db, "usuarios"), where("empresaId", "==", empresaId))).then(
-      (snapshot) => {
+    setActionError("");
+    getDocs(query(collection(db, "usuarios"), where("empresaId", "==", empresaId)))
+      .then((snapshot) => {
         const list = snapshot.docs.map((d) => ({
           id: d.id,
           ...(d.data() as Omit<Usuario, "id">),
         }));
         list.sort((a, b) => a.nome.localeCompare(b.nome));
         setUsuarios(list);
-        setLoading(false);
-      },
-    );
+      })
+      .catch(() => setActionError("Não foi possível carregar os usuários. Tente novamente."))
+      .finally(() => setLoading(false));
   }, [empresaId, role]);
 
   if (role !== "admin") {
@@ -184,7 +185,7 @@ export function GerenciarUsuarios() {
           <select
             value={u.role}
             onChange={(e) => handleRoleChange(u, e.target.value as UsuarioRole)}
-            className="h-8 rounded-md border border-slate-200 px-2 text-xs text-slate-900"
+            className="h-8 rounded-lg border border-slate-200 px-2 text-xs text-slate-900 outline-none transition-all duration-150 hover:border-slate-300 focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15"
           >
             <option value="admin">Administrador</option>
             <option value="analista">Analista</option>
@@ -279,7 +280,7 @@ export function GerenciarUsuarios() {
                 value={novoRole}
                 onChange={(e) => setNovoRole(e.target.value as UsuarioRole)}
                 disabled={inviting}
-                className="h-9 rounded-md border border-slate-200 px-3 text-sm text-slate-900"
+                className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-900 outline-none transition-all duration-150 hover:border-slate-300 focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15"
               >
                 <option value="admin">Administrador</option>
                 <option value="analista">Analista</option>
