@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>SmartOS</title>
+    <script>
+      // GitHub Pages serve este arquivo para qualquer rota desconhecida (ex: /smartos/ordens/abc123).
+      // Redireciona para a raiz do app codificando o caminho original em querystring, que o
+      // script no index.html decodifica de volta. Técnica: rafgraph/spa-github-pages.
+      var pathSegmentsToKeep = 1; // /smartos/ — um segmento de path antes das rotas do app
+      var l = window.location;
+      l.replace(
+        l.protocol +
+          "//" +
+          l.hostname +
+          (l.port ? ":" + l.port : "") +
+          l.pathname
+            .split("/")
+            .slice(0, 1 + pathSegmentsToKeep)
+            .join("/") +
+          "/?/" +
+          l.pathname
+            .slice(1)
+            .split("/")
+            .slice(pathSegmentsToKeep)
+            .join("/")
+            .replace(/&/g, "~and~") +
+          (l.search ? "&" + l.search.slice(1).replace(/&/g, "~and~") : "") +
+          l.hash,
+      );
+    </script>
+  </head>
+  <body></body>
+</html>

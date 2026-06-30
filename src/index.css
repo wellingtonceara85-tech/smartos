@@ -1,0 +1,109 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --color-primary: #1a1a2e;
+  --color-accent: #2563eb;
+  --color-accent-secondary: #1d4ed8;
+  --color-accent-hover: #3b82f6;
+  --color-accent-active: #1e40af;
+
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-error: #dc2626;
+  --color-info: #0284c7;
+
+  --color-slate-900: #0f172a;
+  --color-slate-600: #475569;
+  --color-slate-400: #94a3b8;
+  --color-slate-300: #cbd5e1;
+  --color-slate-200: #e2e8f0;
+  --color-slate-50: #f8fafc;
+
+  --color-bg: #e9edf6;
+  --color-card: #ffffff;
+  --color-card-soft: #f8fafc;
+}
+
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--color-slate-900);
+  background-color: var(--color-bg);
+  background-image:
+    radial-gradient(1000px 520px at 10% -10%, rgba(37, 99, 235, 0.14), transparent 60%),
+    radial-gradient(800px 460px at 100% 0%, rgba(29, 78, 216, 0.1), transparent 55%),
+    radial-gradient(circle, rgba(15, 23, 42, 0.05) 1px, transparent 1px);
+  background-size: auto, auto, 22px 22px;
+  background-attachment: fixed, fixed, fixed;
+  background-repeat: no-repeat, no-repeat, repeat;
+}
+
+::selection {
+  background: rgba(37, 99, 235, 0.18);
+}
+
+/* Padrão de card usado em seções de detalhe e formulários — sombra suave, bordas
+   arredondadas e respiro generoso, no lugar do antigo border+shadow-sm "achatado". */
+.surface-card {
+  position: relative;
+  border-radius: 1rem;
+  border: 1px solid rgba(203, 213, 225, 0.7);
+  background: linear-gradient(180deg, #ffffff 0%, #f7f9fc 100%);
+  padding: 1.5rem;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.05),
+    0 14px 32px -16px rgba(15, 23, 42, 0.14);
+  transition: box-shadow 200ms ease;
+}
+
+.surface-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  border-radius: 1rem 1rem 0 0;
+  background: linear-gradient(90deg, #2563eb, #60a5fa 60%, transparent);
+  opacity: 0.7;
+}
+
+.table-card {
+  position: relative;
+  border-radius: 1rem;
+  border: 1px solid rgba(203, 213, 225, 0.7);
+  background: linear-gradient(180deg, #ffffff 0%, #f7f9fc 100%);
+  overflow: hidden;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.05),
+    0 14px 32px -16px rgba(15, 23, 42, 0.14);
+}
+
+.table-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, #2563eb, #60a5fa 60%, transparent);
+  opacity: 0.7;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 220ms ease both;
+}
