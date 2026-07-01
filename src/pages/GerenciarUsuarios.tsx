@@ -126,7 +126,7 @@ export function GerenciarUsuarios() {
       );
       resetInviteForm();
     } catch {
-      setInviteFormError("Não foi possível enviar o convite. Tente novamente.");
+      setInviteFormError("Não foi possível criar o usuário. Tente novamente.");
     } finally {
       setInviting(false);
     }
@@ -226,7 +226,7 @@ export function GerenciarUsuarios() {
         )}
 
         <div className="flex justify-end">
-          <Button onClick={() => setShowInviteModal(true)}>Convidar Usuário</Button>
+          <Button onClick={() => setShowInviteModal(true)}>Criar Usuário</Button>
         </div>
 
         {loading ? (
@@ -240,7 +240,7 @@ export function GerenciarUsuarios() {
 
       {showInviteModal && (
         <Modal
-          title="Convidar Usuário"
+          title="Criar Usuário"
           onClose={resetInviteForm}
           footer={
             <>
@@ -248,7 +248,7 @@ export function GerenciarUsuarios() {
                 Cancelar
               </Button>
               <Button onClick={handleInvite} loading={inviting}>
-                Enviar convite
+                Criar
               </Button>
             </>
           }
