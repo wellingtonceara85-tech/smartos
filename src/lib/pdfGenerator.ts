@@ -374,7 +374,14 @@ export async function generateOsPdf(ordem: OrdemServico, empresa: Empresa): Prom
   return doc;
 }
 
-export async function generateReciboPdf(ordem: OrdemServico, empresa: Empresa): Promise<jsPDF> {
+interface ClienteInfo {
+  telefone?: string;
+  cpfCnpj?: string;
+  endereco?: string;
+  email?: string;
+}
+
+export async function generateReciboPdf(ordem: OrdemServico, empresa: Empresa, cliente?: ClienteInfo): Promise<jsPDF> {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pw = doc.internal.pageSize.getWidth();
   const cw = pw - MARGIN_X * 2;
@@ -424,22 +431,41 @@ export async function generateReciboPdf(ordem: OrdemServico, empresa: Empresa): 
   doc.text("RECIBO DE PAGAMENTO", pw / 2, y, { align: "center" });
   y += 8;
 
-  // Box com dados da OS
+  // Box com dados da OS — linhas extras dependem dos campos do cliente
+  const clienteRows: Array<[string, string]> = [
+    ["Cliente", ordem.clienteNome],
+  ];
+  const tel = cliente?.telefone ?? ordem.clienteTelefone;
+  if (tel) clienteRows.push(["Telefone", tel]);
+  if (cliente?.cpfCnpj) clienteRows.push(["CPF/CNPJ", cliente.cpfCnpj]);
+  if (cliente?.email) clienteRows.push(["E-mail", cliente.email]);
+  if (cliente?.endereco) clienteRows.push(["Endereço", cliente.endereco]);
+
+  const fixedRows: Array<[string, string]> = [
+    ["OS", formatOsNumero(ordem.numero)],
+    ...clienteRows,
+    ["Equipamento", `${ordem.equipamentoMarca} ${ordem.equipamentoModelo}`],
+  ];
+  const rowH = 7;
+  const boxH = fixedRows.length * rowH + 4;
+
   doc.setFillColor(...BOX_BG);
   doc.setDrawColor(...BOX_BORDER);
-  doc.roundedRect(MARGIN_X, y, cw, 22, 2, 2, "FD");
-  doc.setFont("helvetica", "normal");
+  doc.roundedRect(MARGIN_X, y, cw, boxH, 2, 2, "FD");
   doc.setFontSize(8.5);
-  doc.setTextColor(...MUTED);
-  doc.text("OS", MARGIN_X + 4, y + 6);
-  doc.text("Cliente", MARGIN_X + 4, y + 13);
-  doc.text("Equipamento", MARGIN_X + 4, y + 20);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...INK);
-  doc.text(formatOsNumero(ordem.numero), MARGIN_X + 28, y + 6);
-  doc.text(ordem.clienteNome, MARGIN_X + 28, y + 13);
-  doc.text(`${ordem.equipamentoMarca} ${ordem.equipamentoModelo}`, MARGIN_X + 28, y + 20);
-  y += 28;
+
+  let ry = y + 6;
+  for (const [label, value] of fixedRows) {
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...MUTED);
+    doc.text(label, MARGIN_X + 4, ry);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...INK);
+    const maxW = cw - 36;
+    doc.text(doc.splitTextToSize(value, maxW)[0], MARGIN_X + 32, ry);
+    ry += rowH;
+  }
+  y += boxH + 6;
 
   // Box financeiro
   const pagamento = ordem.pagamento;

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { arrayUnion, doc, serverTimestamp, Timestamp, updateDoc } from "firebase/firestore";
+import { arrayUnion, doc, getDoc, serverTimestamp, Timestamp, updateDoc } from "firebase/firestore";
 import { Phone, Copy, Check, FileText, ExternalLink, CheckSquare, Download } from "lucide-react";
 import { db } from "../lib/firebase";
 import { AppShell } from "../components/layout/AppShell";
@@ -195,7 +195,22 @@ export function OrdemDetalhes() {
         logoUrl: logoUrl ?? undefined,
         criadoEm: ordem.dataAbertura,
       } as import("../types/empresa").Empresa;
-      const pdf = await generateReciboPdf(ordem, empresaObj);
+
+      let clienteInfo: { telefone?: string; cpfCnpj?: string; email?: string; endereco?: string } | undefined;
+      if (ordem.clienteId) {
+        const snap = await getDoc(doc(db, "clientes", ordem.clienteId));
+        if (snap.exists()) {
+          const d = snap.data();
+          clienteInfo = {
+            telefone: d.telefone,
+            cpfCnpj: d.cpfCnpj,
+            email: d.email,
+            endereco: d.endereco,
+          };
+        }
+      }
+
+      const pdf = await generateReciboPdf(ordem, empresaObj, clienteInfo);
       pdf.save(`Recibo_OS_${ordem.numero}.pdf`);
     } catch {
       setActionError("Não foi possível gerar o PDF.");
