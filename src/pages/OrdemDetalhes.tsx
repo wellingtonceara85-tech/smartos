@@ -32,6 +32,7 @@ interface OrcamentoModalProps {
 
 function OrcamentoModal({ ordem, onClose, onAdvance }: OrcamentoModalProps) {
   const { empresaNome } = useEmpresa();
+  const [observacoes, setObservacoes] = useState("");
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
   const link = `${window.location.origin}${base}/track/${ordem.token}`;
 
@@ -43,8 +44,13 @@ function OrcamentoModal({ ordem, onClose, onAdvance }: OrcamentoModalProps) {
       link,
       empresaNome,
       valor: ordem.valorOrcamento,
+      observacoes: observacoes.trim() || undefined,
     });
-    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+    const tel = ordem.clienteTelefone?.replace(/\D/g, "");
+    const url = tel
+      ? `https://wa.me/55${tel}?text=${encodeURIComponent(msg)}`
+      : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    window.open(url, "_blank");
   }
 
   return (
@@ -63,9 +69,6 @@ function OrcamentoModal({ ordem, onClose, onAdvance }: OrcamentoModalProps) {
       }
     >
       <div className="space-y-4">
-        <p className="text-sm text-slate-600">
-          A OS será marcada como <strong>Orçamento Enviado</strong>. Deseja notificar o cliente?
-        </p>
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-slate-500">Cliente</span>
@@ -79,10 +82,25 @@ function OrcamentoModal({ ordem, onClose, onAdvance }: OrcamentoModalProps) {
           )}
           {ordem.valorOrcamento != null && (
             <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Valor do orçamento</span>
+              <span className="text-slate-500">Valor total</span>
               <span className="font-semibold text-[#16A34A]">{formatCurrency(ordem.valorOrcamento)}</span>
             </div>
           )}
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-[13px] font-medium text-slate-700">
+            Detalhes do orçamento (opcional)
+          </label>
+          <textarea
+            value={observacoes}
+            onChange={(e) => setObservacoes(e.target.value)}
+            placeholder={"Ex: Necessaria troca da placa principal.\nPeca: R$ 180,00\nMao de obra: R$ 120,00"}
+            rows={4}
+            maxLength={600}
+            className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all hover:border-slate-300 focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15 resize-none"
+          />
+          <p className="text-xs text-slate-400">{observacoes.length}/600</p>
         </div>
       </div>
     </Modal>
@@ -392,6 +410,36 @@ export function OrdemDetalhes() {
             onAddObservation={handleAddObservation}
           />
         </section>
+
+        {ordem.clienteResposta && (
+          <section className="surface-card">
+            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+              Resposta do Cliente
+            </h3>
+            <div className={`rounded-lg border p-4 ${
+              ordem.clienteResposta.tipo === "aprovado"
+                ? "border-[#16A34A]/40 bg-[#16A34A]/8"
+                : ordem.clienteResposta.tipo === "reprovado"
+                  ? "border-[#DC2626]/40 bg-[#DC2626]/8"
+                  : "border-[#2563EB]/40 bg-[#2563EB]/8"
+            }`}>
+              <p className={`text-sm font-semibold ${
+                ordem.clienteResposta.tipo === "aprovado"
+                  ? "text-[#16A34A]"
+                  : ordem.clienteResposta.tipo === "reprovado"
+                    ? "text-[#DC2626]"
+                    : "text-[#2563EB]"
+              }`}>
+                {ordem.clienteResposta.tipo === "aprovado" && "Cliente aprovou o orcamento"}
+                {ordem.clienteResposta.tipo === "reprovado" && "Cliente reprovou o orcamento"}
+                {ordem.clienteResposta.tipo === "duvida" && "Cliente solicitou mais detalhes"}
+              </p>
+              {ordem.clienteResposta.mensagem && (
+                <p className="mt-2 text-sm text-slate-700">{ordem.clienteResposta.mensagem}</p>
+              )}
+            </div>
+          </section>
+        )}
 
         {ordem.status === "Concluída" && (
           <section className="surface-card">

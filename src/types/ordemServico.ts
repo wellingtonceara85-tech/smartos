@@ -33,6 +33,14 @@ export interface Garantia {
   dataValidade: Timestamp;
 }
 
+export type ClienteRespostaTipo = "aprovado" | "reprovado" | "duvida";
+
+export interface ClienteResposta {
+  tipo: ClienteRespostaTipo;
+  mensagem?: string;
+  criadoEm: Timestamp;
+}
+
 export interface OrdemServico {
   id: string;
   empresaId: string;
@@ -59,5 +67,6 @@ export interface OrdemServico {
   fotos?: FotoOS[];
   historico?: HistoricoItem[];
   garantia?: Garantia;
+  clienteResposta?: ClienteResposta;
   updatedAt: Timestamp;
 }
