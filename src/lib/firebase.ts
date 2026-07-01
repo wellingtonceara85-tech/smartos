@@ -1,5 +1,11 @@
-import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { deleteApp, initializeApp } from "firebase/app";
+import {
+  createUserWithEmailAndPassword,
+  deleteUser,
+  getAuth,
+  inMemoryPersistence,
+  initializeAuth,
+} from "firebase/auth";
 import { initializeFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
@@ -19,3 +25,35 @@ export const auth = getAuth(app);
 // em redes corporativas, antivírus e extensões de certificado digital.
 export const db = initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
 export const storage = getStorage(app);
+
+/**
+ * Cria uma conta de login (Firebase Auth) para outro usuário sem afetar a sessão de quem está
+ * chamando. O SDK client-side só mantém uma sessão ativa por instância de Auth — criar a conta
+ * direto em `auth` deslogaria o admin. Por isso a criação acontece numa instância secundária do
+ * app, descartada logo em seguida. Essa instância usa `inMemoryPersistence` propositalmente: a
+ * persistência padrão (IndexedDB) é compartilhada por origem e pode fazer o SDK emitir eventos de
+ * auth cruzados entre as duas instâncias no mesmo separador; em memória, a sessão nova nunca toca
+ * o storage do navegador e não tem como interferir na sessão do admin. `onCreated` roda com o uid
+ * já disponível, usando a instância primária de `db` (ainda autenticada como o admin) para gravar
+ * o perfil em `usuarios/{uid}`; se `onCreated` falhar, a conta recém-criada é removida para não
+ * deixar login órfão sem perfil.
+ */
+export async function createUsuarioAccount(
+  email: string,
+  password: string,
+  onCreated: (uid: string) => Promise<void>,
+): Promise<void> {
+  const secondaryApp = initializeApp(firebaseConfig, `secondary-${Date.now()}`);
+  const secondaryAuth = initializeAuth(secondaryApp, { persistence: inMemoryPersistence });
+  try {
+    const credential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+    try {
+      await onCreated(credential.user.uid);
+    } catch (error) {
+      await deleteUser(credential.user).catch(() => {});
+      throw error;
+    }
+  } finally {
+    await deleteApp(secondaryApp).catch(() => {});
+  }
+}
