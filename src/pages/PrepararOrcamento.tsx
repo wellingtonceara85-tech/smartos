@@ -316,7 +316,7 @@ export function PrepararOrcamento() {
                     placeholder="Ex: Tela LCD, Bateria..."
                     className={`flex-1 ${INPUT_CLS}`}
                   />
-                  <div className="relative w-32">
+                  <div className="relative w-28 sm:w-32">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400">
                       R$
                     </span>

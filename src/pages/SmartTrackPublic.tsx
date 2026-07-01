@@ -156,7 +156,7 @@ export function SmartTrackPublic() {
             </div>
 
             {(oc.prazoExecucao || oc.garantia) && (
-              <div className="px-5 py-4 border-b border-slate-100 flex gap-6">
+              <div className="px-5 py-4 border-b border-slate-100 flex flex-wrap gap-x-6 gap-y-3">
                 {oc.prazoExecucao && (
                   <div>
                     <p className="text-xs text-slate-500">Prazo de execucao</p>

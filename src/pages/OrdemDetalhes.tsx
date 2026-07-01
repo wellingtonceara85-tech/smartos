@@ -404,18 +404,18 @@ export function OrdemDetalhes() {
             <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-4">
               Recebimento
             </p>
-            <div className="grid grid-cols-3 gap-4 mb-5">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-5">
               <div className="text-center">
-                <p className="text-xs text-slate-500 mb-1">Valor orçado</p>
-                <p className="text-base font-bold text-slate-900">{formatCurrency(valorOrcamento)}</p>
+                <p className="text-[11px] text-slate-500 mb-1">Valor orçado</p>
+                <p className="text-sm sm:text-base font-bold text-slate-900">{formatCurrency(valorOrcamento)}</p>
               </div>
               <div className="text-center">
-                <p className="text-xs text-slate-500 mb-1">Recebido</p>
-                <p className="text-base font-bold text-[#16A34A]">{formatCurrency(totalPago)}</p>
+                <p className="text-[11px] text-slate-500 mb-1">Recebido</p>
+                <p className="text-sm sm:text-base font-bold text-[#16A34A]">{formatCurrency(totalPago)}</p>
               </div>
               <div className="text-center">
-                <p className="text-xs text-slate-500 mb-1">Saldo</p>
-                <p className={`text-base font-bold ${saldoPendente > 0 ? "text-[#F59E0B]" : "text-[#16A34A]"}`}>
+                <p className="text-[11px] text-slate-500 mb-1">Saldo</p>
+                <p className={`text-sm sm:text-base font-bold ${saldoPendente > 0 ? "text-[#F59E0B]" : "text-[#16A34A]"}`}>
                   {formatCurrency(saldoPendente)}
                 </p>
               </div>
