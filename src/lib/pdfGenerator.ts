@@ -2,7 +2,7 @@ import { jsPDF } from "jspdf";
 import QRCode from "qrcode";
 import type { OrdemServico } from "../types/ordemServico";
 import type { Empresa } from "../types/empresa";
-import { OS_STATUS_VARIANT } from "./osStatus";
+import { getStatusVariant } from "./osStatus";
 import { formatCurrency, formatDate } from "./format";
 import { formatOsNumero } from "./osNumero";
 
@@ -132,7 +132,7 @@ export async function generateOsPdf(ordem: OrdemServico, empresa: Empresa): Prom
   doc.setTextColor(...ACCENT);
   doc.text(formatOsNumero(ordem.numero), pageWidth - MARGIN_X, headerTop + 13, { align: "right" });
 
-  const statusColor = STATUS_COLORS[OS_STATUS_VARIANT[ordem.status]] ?? STATUS_COLORS.neutral;
+  const statusColor = STATUS_COLORS[getStatusVariant(ordem.status)] ?? STATUS_COLORS.neutral;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8.5);
   const statusLabel = ordem.status.toUpperCase();

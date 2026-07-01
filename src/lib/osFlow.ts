@@ -1,6 +1,16 @@
 import type { OsStatus } from "../types/ordemServico";
 import type { UserRole } from "../contexts/EmpresaContext";
 
+const LEGACY_STATUS_MAP: Record<string, OsStatus> = {
+  "Aguardando Avaliação": "Recebida",
+  "Aguardando Retirada": "Pronto para Retirada",
+  "Em Andamento": "Em Reparo",
+};
+
+export function normalizeStatus(raw: string): OsStatus {
+  return (LEGACY_STATUS_MAP[raw] as OsStatus | undefined) ?? (raw as OsStatus);
+}
+
 export const STATUS_ORDER: OsStatus[] = [
   "Recebida",
   "Em Avaliação",

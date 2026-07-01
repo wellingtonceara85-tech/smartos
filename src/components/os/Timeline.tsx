@@ -2,7 +2,7 @@ import { useState } from "react";
 import { MessageSquare } from "lucide-react";
 import { Button } from "../ui/Button";
 import { Textarea } from "../ui/Textarea";
-import { OS_STATUS_VARIANT } from "../../lib/osStatus";
+import { getStatusVariant } from "../../lib/osStatus";
 import type { BadgeVariant } from "../ui/Badge";
 import type { HistoricoItem } from "../../types/ordemServico";
 
@@ -47,7 +47,7 @@ export function Timeline({ historico, canAddObservation, onAddObservation }: Tim
               <span
                 className={`absolute -left-[25px] top-1 h-3 w-3 rounded-full border-2 bg-white ${
                   item.tipo === "status" && item.statusNovo
-                    ? DOT_CLASSES[OS_STATUS_VARIANT[item.statusNovo]]
+                    ? DOT_CLASSES[getStatusVariant(item.statusNovo)]
                     : "border-slate-300 bg-slate-300"
                 }`}
               />

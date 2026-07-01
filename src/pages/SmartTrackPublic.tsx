@@ -5,7 +5,7 @@ import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useOrdemServicoByToken } from "../hooks/useOrdemServicoByToken";
 import { Badge } from "../components/ui/Badge";
-import { OS_STATUS_VARIANT } from "../lib/osStatus";
+import { getStatusVariant, getStatusLabel } from "../lib/osStatus";
 import { formatDate } from "../lib/format";
 import { formatOsNumero } from "../lib/osNumero";
 import { formatCurrency } from "../lib/format";
@@ -89,7 +89,7 @@ export function SmartTrackPublic() {
             <p className="text-sm text-slate-500">{formatOsNumero(ordem.numero)}</p>
           </div>
           <div className="ml-auto">
-            <Badge label={ordem.status} variant={OS_STATUS_VARIANT[ordem.status]} />
+            <Badge label={getStatusLabel(ordem.status)} variant={getStatusVariant(ordem.status)} />
           </div>
         </div>
       </header>

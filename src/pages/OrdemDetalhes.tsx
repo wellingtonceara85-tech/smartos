@@ -16,8 +16,8 @@ import { ConfirmModal } from "../components/os/ConfirmModal";
 import { useAuth } from "../contexts/AuthContext";
 import { useEmpresa } from "../contexts/EmpresaContext";
 import { useOrdemServico } from "../hooks/useOrdemServico";
-import { getNextStatus, getOsPermissions } from "../lib/osFlow";
-import { OS_STATUS_VARIANT } from "../lib/osStatus";
+import { getNextStatus, getOsPermissions, normalizeStatus } from "../lib/osFlow";
+import { getStatusVariant } from "../lib/osStatus";
 import { formatCurrency, formatDate } from "../lib/format";
 import { formatOsNumero } from "../lib/osNumero";
 import { generateReciboPdf } from "../lib/pdfGenerator";
@@ -272,8 +272,9 @@ export function OrdemDetalhes() {
     );
   }
 
-  const permissions = getOsPermissions(ordem.status, role);
-  const next = getNextStatus(ordem.status);
+  const status = normalizeStatus(ordem.status);
+  const permissions = getOsPermissions(status, role);
+  const next = getNextStatus(status);
   const isAdmin = role === "admin";
 
   const RESPOSTA_TEXTO: Record<string, string> = {
@@ -303,12 +304,12 @@ export function OrdemDetalhes() {
   return (
     <AppShell title={formatOsNumero(ordem.numero)}>
       <div className="max-w-3xl space-y-6">
-        {ordem.status === "Concluída" && ordem.dataConclusao && (
+        {status === "Concluída" && ordem.dataConclusao && (
           <p className="rounded-md bg-[#16A34A]/10 px-4 py-3 text-sm text-[#16A34A]">
             OS encerrada em {formatDate(ordem.dataConclusao)}.
           </p>
         )}
-        {ordem.status === "Cancelada" && (
+        {status === "Cancelada" && (
           <p className="rounded-md bg-[#DC2626]/10 px-4 py-3 text-sm text-[#DC2626]">
             OS cancelada. Motivo: {ordem.motivoCancelamento}
           </p>
@@ -327,7 +328,7 @@ export function OrdemDetalhes() {
                 {ordem.prazoPrevisto && ` · Prazo: ${formatDate(ordem.prazoPrevisto)}`}
               </p>
             </div>
-            <Badge label={ordem.status} variant={OS_STATUS_VARIANT[ordem.status]} />
+            <Badge label={status} variant={getStatusVariant(status)} />
           </div>
 
           <div className="mt-4 flex flex-wrap gap-3">
@@ -355,7 +356,7 @@ export function OrdemDetalhes() {
         </section>
 
         {/* Card financeiro — "Pronto para Retirada" */}
-        {ordem.status === "Pronto para Retirada" && isAdmin && (
+        {status === "Pronto para Retirada" && isAdmin && (
           <section className="surface-card border-l-4 border-l-[#2563EB]">
             <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-4">
               Recebimento
@@ -406,7 +407,7 @@ export function OrdemDetalhes() {
         )}
 
         {/* Card pós-pagamento — "Recebimento" */}
-        {ordem.status === "Recebimento" && isAdmin && ordem.pagamento && (
+        {status === "Recebimento" && isAdmin && ordem.pagamento && (
           <section className="surface-card border-l-4 border-l-[#16A34A]">
             <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-4">
               Pagamento registrado
@@ -460,7 +461,7 @@ export function OrdemDetalhes() {
         )}
 
         {/* Card "Entregue" — botão para concluir */}
-        {ordem.status === "Entregue" && isAdmin && (
+        {status === "Entregue" && isAdmin && (
           <section className="surface-card border-l-4 border-l-[#16A34A]">
             <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-3">
               Equipamento entregue
@@ -668,7 +669,7 @@ export function OrdemDetalhes() {
           </section>
         )}
 
-        {ordem.status === "Concluída" && (
+        {status === "Concluída" && (
           <section className="surface-card">
             <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
               Documento da OS
@@ -704,7 +705,7 @@ export function OrdemDetalhes() {
           onConfirm={handlePayment}
         />
       )}
-      {showConfirmAdvance && ordem.status === "Entregue" && (
+      {showConfirmAdvance && status === "Entregue" && (
         <ConfirmModal
           title="Concluir OS"
           message={`Tem certeza? A OS será marcada como "Concluída" e a garantia será registrada por ${prazoGarantiaDias} dias.`}

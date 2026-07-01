@@ -7,7 +7,7 @@ import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
 import { DataTable, type Column } from "../components/ui/DataTable";
 import { useEmpresa } from "../contexts/EmpresaContext";
-import { OS_STATUS_VARIANT } from "../lib/osStatus";
+import { getStatusVariant, getStatusLabel } from "../lib/osStatus";
 import { formatDate } from "../lib/format";
 import { formatOsNumero } from "../lib/osNumero";
 import type { Cliente } from "../types/cliente";
@@ -109,7 +109,7 @@ export function ClienteDetalhes() {
     },
     {
       header: "Status",
-      render: (o) => <Badge label={o.status} variant={OS_STATUS_VARIANT[o.status]} />,
+      render: (o) => <Badge label={getStatusLabel(o.status)} variant={getStatusVariant(o.status)} />,
     },
     {
       header: "Abertura",

@@ -8,7 +8,7 @@ import { KpiCard, KpiCardSkeleton } from "../components/dashboard/KpiCard";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { useEmpresa } from "../contexts/EmpresaContext";
-import { OS_STATUS_VARIANT } from "../lib/osStatus";
+import { getStatusVariant, getStatusLabel } from "../lib/osStatus";
 import { formatCurrency, formatDate, isSameDay, isSameMonth } from "../lib/format";
 import { formatOsNumero } from "../lib/osNumero";
 import type { OrdemServico } from "../types/ordemServico";
@@ -177,7 +177,7 @@ function OrdensTable({ ordens, role }: { ordens: OrdemServico[]; role: "admin" |
                 {os.equipamentoMarca} {os.equipamentoModelo}
               </td>
               <td className="px-5 py-3.5">
-                <Badge label={os.status} variant={OS_STATUS_VARIANT[os.status]} />
+                <Badge label={getStatusLabel(os.status)} variant={getStatusVariant(os.status)} />
               </td>
               <td className="px-5 py-3.5 text-slate-500">{formatDate(os.dataAbertura)}</td>
               {role === "admin" && (

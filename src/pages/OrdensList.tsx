@@ -10,7 +10,7 @@ import { DataTable, type Column } from "../components/ui/DataTable";
 import { Input } from "../components/ui/Input";
 import { Pagination } from "../components/ui/Pagination";
 import { useEmpresa } from "../contexts/EmpresaContext";
-import { OS_STATUS_VARIANT } from "../lib/osStatus";
+import { getStatusVariant, getStatusLabel } from "../lib/osStatus";
 import { formatCurrency, formatDate } from "../lib/format";
 import { formatOsNumero } from "../lib/osNumero";
 import { isWithinPeriod, type PeriodFilter } from "../lib/period";
@@ -29,7 +29,7 @@ function buildColumns(role: string | null): Column<OrdemServico>[] {
     },
     {
       header: "Status",
-      render: (os) => <Badge label={os.status} variant={OS_STATUS_VARIANT[os.status]} />,
+      render: (os) => <Badge label={getStatusLabel(os.status)} variant={getStatusVariant(os.status)} />,
     },
     { header: "Data de abertura", render: (os) => formatDate(os.dataAbertura) },
     {
