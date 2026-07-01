@@ -21,10 +21,6 @@ interface PecaRow {
   valorCents: number;
 }
 
-function parseCents(display: string): number {
-  return maskCurrencyInput(display).cents;
-}
-
 export function PrepararOrcamento() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -386,7 +382,7 @@ export function PrepararOrcamento() {
             fotos={fotos}
             canManage
             isAdmin
-            onChange={setFotos}
+            onChange={(f) => { setFotos(f); return Promise.resolve(); }}
           />
         </section>
 
