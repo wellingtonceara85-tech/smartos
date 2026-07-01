@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { arrayUnion, doc, serverTimestamp, Timestamp, updateDoc } from "firebase/firestore";
 import { Plus, Trash2, Send, Save, ChevronLeft } from "lucide-react";
@@ -39,28 +39,48 @@ export function PrepararOrcamento() {
   const { empresaId, empresaNome } = useEmpresa();
   const { ordem, loading, error, reload } = useOrdemServico(id);
 
-  const oc = ordem?.orcamento;
+  const [descricaoServicos, setDescricaoServicos] = useState("");
+  const [pecas, setPecas] = useState<PecaRow[]>([]);
+  const [maoDeObraDisplay, setMaoDeObraDisplay] = useState("");
+  const [maoDeObraCents, setMaoDeObraCents] = useState(0);
+  const [outrasDespesasDisplay, setOutrasDespesasDisplay] = useState("");
+  const [outrasDespesasCents, setOutrasDespesasCents] = useState(0);
+  const [descontoDisplay, setDescontoDisplay] = useState("");
+  const [descontoCents, setDescontoCents] = useState(0);
+  const [prazoExecucao, setPrazoExecucao] = useState("");
+  const [garantia, setGarantia] = useState("");
+  const [observacoes, setObservacoes] = useState("");
+  const [fotos, setFotos] = useState<FotoOS[]>([]);
 
-  const [descricaoServicos, setDescricaoServicos] = useState(oc?.descricaoServicos ?? "");
-  const [pecas, setPecas] = useState<PecaRow[]>(() =>
-    (oc?.pecas ?? []).map((p) => ({
-      descricao: p.descricao,
-      valorDisplay: centsToDisplay(p.valor),
-      valorCents: Math.round(p.valor * 100),
-    }))
-  );
-  const [maoDeObraDisplay, setMaoDeObraDisplay] = useState(oc ? centsToDisplay(oc.maoDeObra) : "");
-  const [maoDeObraCents, setMaoDeObraCents] = useState(oc ? Math.round(oc.maoDeObra * 100) : 0);
-  const [outrasDespesasDisplay, setOutrasDespesasDisplay] = useState(
-    oc ? centsToDisplay(oc.outrasDespesas) : ""
-  );
-  const [outrasDespesasCents, setOutrasDespesasCents] = useState(oc ? Math.round(oc.outrasDespesas * 100) : 0);
-  const [descontoDisplay, setDescontoDisplay] = useState(oc ? centsToDisplay(oc.desconto) : "");
-  const [descontoCents, setDescontoCents] = useState(oc ? Math.round(oc.desconto * 100) : 0);
-  const [prazoExecucao, setPrazoExecucao] = useState(oc?.prazoExecucao ?? "");
-  const [garantia, setGarantia] = useState(oc?.garantia ?? "");
-  const [observacoes, setObservacoes] = useState(oc?.observacoes ?? "");
-  const [fotos, setFotos] = useState<FotoOS[]>(oc?.fotos ?? []);
+  // Preenche o formulário uma vez quando os dados do Firestore chegam
+  const initialized = useRef(false);
+  useEffect(() => {
+    if (!ordem || initialized.current) return;
+    initialized.current = true;
+    const oc = ordem.orcamento;
+    if (!oc) return;
+    setDescricaoServicos(oc.descricaoServicos ?? "");
+    setPecas(
+      (oc.pecas ?? []).map((p) => ({
+        descricao: p.descricao,
+        valorDisplay: centsToDisplay(p.valor),
+        valorCents: Math.round(p.valor * 100),
+      }))
+    );
+    const mdoDisplay = centsToDisplay(oc.maoDeObra);
+    setMaoDeObraDisplay(mdoDisplay);
+    setMaoDeObraCents(Math.round(oc.maoDeObra * 100));
+    const odDisplay = centsToDisplay(oc.outrasDespesas);
+    setOutrasDespesasDisplay(odDisplay);
+    setOutrasDespesasCents(Math.round(oc.outrasDespesas * 100));
+    const descDisplay = centsToDisplay(oc.desconto);
+    setDescontoDisplay(descDisplay);
+    setDescontoCents(Math.round(oc.desconto * 100));
+    setPrazoExecucao(oc.prazoExecucao ?? "");
+    setGarantia(oc.garantia ?? "");
+    setObservacoes(oc.observacoes ?? "");
+    setFotos(oc.fotos ?? []);
+  }, [ordem]);
 
   const [saving, setSaving] = useState(false);
   const [sending, setSending] = useState(false);
