@@ -13,7 +13,6 @@ import { OsPdfActions } from "../components/os/OsPdfActions";
 import { CancelOsModal } from "../components/os/CancelOsModal";
 import { PaymentModal, type PaymentData } from "../components/os/PaymentModal";
 import { ConfirmModal } from "../components/os/ConfirmModal";
-import { Modal } from "../components/ui/Modal";
 import { useAuth } from "../contexts/AuthContext";
 import { useEmpresa } from "../contexts/EmpresaContext";
 import { useOrdemServico } from "../hooks/useOrdemServico";
@@ -21,91 +20,7 @@ import { getNextStatus, getOsPermissions } from "../lib/osFlow";
 import { OS_STATUS_VARIANT } from "../lib/osStatus";
 import { formatCurrency, formatDate } from "../lib/format";
 import { formatOsNumero } from "../lib/osNumero";
-import { buildOrcamentoWhatsAppMessage } from "../lib/whatsappMessage";
-import type { FotoOS, OrdemServico } from "../types/ordemServico";
-
-interface OrcamentoModalProps {
-  ordem: OrdemServico;
-  onClose: () => void;
-  onAdvance: () => Promise<void>;
-}
-
-function OrcamentoModal({ ordem, onClose, onAdvance }: OrcamentoModalProps) {
-  const { empresaNome } = useEmpresa();
-  const [observacoes, setObservacoes] = useState("");
-  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-  const link = `${window.location.origin}${base}/track/${ordem.token}`;
-
-  async function handleEnviarWhatsApp() {
-    await onAdvance();
-    const msg = buildOrcamentoWhatsAppMessage({
-      clienteNome: ordem.clienteNome,
-      numero: formatOsNumero(ordem.numero),
-      link,
-      empresaNome,
-      valor: ordem.valorOrcamento,
-      observacoes: observacoes.trim() || undefined,
-    });
-    const tel = ordem.clienteTelefone?.replace(/\D/g, "");
-    const url = tel
-      ? `https://wa.me/55${tel}?text=${encodeURIComponent(msg)}`
-      : `https://wa.me/?text=${encodeURIComponent(msg)}`;
-    window.open(url, "_blank");
-  }
-
-  return (
-    <Modal
-      title="Enviar Orçamento"
-      onClose={onClose}
-      footer={
-        <div className="flex gap-3">
-          <Button variant="ghost" onClick={onAdvance}>
-            Só avançar status
-          </Button>
-          <Button onClick={handleEnviarWhatsApp}>
-            Enviar via WhatsApp
-          </Button>
-        </div>
-      }
-    >
-      <div className="space-y-4">
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-slate-500">Cliente</span>
-            <span className="font-medium text-slate-900">{ordem.clienteNome}</span>
-          </div>
-          {ordem.clienteTelefone && (
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Telefone</span>
-              <span className="font-medium text-slate-900">{ordem.clienteTelefone}</span>
-            </div>
-          )}
-          {ordem.valorOrcamento != null && (
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Valor total</span>
-              <span className="font-semibold text-[#16A34A]">{formatCurrency(ordem.valorOrcamento)}</span>
-            </div>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label className="text-[13px] font-medium text-slate-700">
-            Detalhes do orçamento (opcional)
-          </label>
-          <textarea
-            value={observacoes}
-            onChange={(e) => setObservacoes(e.target.value)}
-            placeholder={"Ex: Necessaria troca da placa principal.\nPeca: R$ 180,00\nMao de obra: R$ 120,00"}
-            rows={4}
-            maxLength={600}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all hover:border-slate-300 focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15 resize-none"
-          />
-          <p className="text-xs text-slate-400">{observacoes.length}/600</p>
-        </div>
-      </div>
-    </Modal>
-  );
-}
+import type { FotoOS } from "../types/ordemServico";
 
 export function OrdemDetalhes() {
   const { id } = useParams<{ id: string }>();
@@ -117,7 +32,6 @@ export function OrdemDetalhes() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showConfirmAdvance, setShowConfirmAdvance] = useState(false);
-  const [showOrcamentoModal, setShowOrcamentoModal] = useState(false);
   const [actionError, setActionError] = useState("");
 
   const autor = user?.email ?? "Usuário";
@@ -284,15 +198,19 @@ export function OrdemDetalhes() {
           </div>
 
           <div className="mt-4 flex flex-wrap gap-3">
-            {permissions.canAdvance && next && (
+            {permissions.canAdvance && next && next !== "Orçamento Enviado" && (
               <Button
                 onClick={() => {
                   if (next === "Concluída") setShowConfirmAdvance(true);
-                  else if (next === "Orçamento Enviado") setShowOrcamentoModal(true);
                   else handleAdvance(next);
                 }}
               >
                 Avançar para {next}
+              </Button>
+            )}
+            {permissions.canAdvance && next === "Orçamento Enviado" && (
+              <Button onClick={() => navigate(`/ordens/${ordem.id}/orcamento`)}>
+                {ordem.orcamento ? "Editar Orcamento" : "Preparar Orcamento"}
               </Button>
             )}
             {permissions.canRegisterPayment && (
@@ -364,10 +282,68 @@ export function OrdemDetalhes() {
                 <p className="text-sm text-slate-900">{ordem.diagnostico}</p>
               </div>
             )}
-            {isAdmin && ordem.valorOrcamento != null && (
-              <div>
-                <p className="text-xs text-slate-500">Valor do orçamento</p>
-                <p className="text-sm text-slate-900">{formatCurrency(ordem.valorOrcamento)}</p>
+            {isAdmin && ordem.orcamento && (
+              <div className="sm:col-span-2">
+                <p className="text-xs text-slate-500 mb-2">Orcamento</p>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 divide-y divide-slate-100">
+                  {ordem.orcamento.descricaoServicos && (
+                    <div className="px-3 py-2">
+                      <p className="text-xs text-slate-500">Servicos</p>
+                      <p className="text-sm text-slate-900">{ordem.orcamento.descricaoServicos}</p>
+                    </div>
+                  )}
+                  {ordem.orcamento.pecas.length > 0 && (
+                    <div className="px-3 py-2">
+                      <p className="text-xs text-slate-500 mb-1">Pecas</p>
+                      {ordem.orcamento.pecas.map((p, i) => (
+                        <div key={i} className="flex justify-between text-sm">
+                          <span className="text-slate-700">{p.descricao}</span>
+                          <span className="text-slate-900">{formatCurrency(p.valor)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="px-3 py-2 space-y-1">
+                    {ordem.orcamento.maoDeObra > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">Mao de obra</span>
+                        <span className="text-slate-900">{formatCurrency(ordem.orcamento.maoDeObra)}</span>
+                      </div>
+                    )}
+                    {ordem.orcamento.outrasDespesas > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">Outras despesas</span>
+                        <span className="text-slate-900">{formatCurrency(ordem.orcamento.outrasDespesas)}</span>
+                      </div>
+                    )}
+                    {ordem.orcamento.desconto > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">Desconto</span>
+                        <span className="text-[#DC2626]">- {formatCurrency(ordem.orcamento.desconto)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm font-semibold pt-1 border-t border-slate-200">
+                      <span className="text-slate-700">Total</span>
+                      <span className="text-[#16A34A]">{formatCurrency(ordem.orcamento.total)}</span>
+                    </div>
+                  </div>
+                  {(ordem.orcamento.prazoExecucao || ordem.orcamento.garantia) && (
+                    <div className="px-3 py-2 flex gap-4">
+                      {ordem.orcamento.prazoExecucao && (
+                        <div>
+                          <p className="text-xs text-slate-500">Prazo</p>
+                          <p className="text-sm text-slate-900">{ordem.orcamento.prazoExecucao}</p>
+                        </div>
+                      )}
+                      {ordem.orcamento.garantia && (
+                        <div>
+                          <p className="text-xs text-slate-500">Garantia</p>
+                          <p className="text-sm text-slate-900">{ordem.orcamento.garantia}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
             {isAdmin && ordem.pagamento && (
@@ -477,16 +453,6 @@ export function OrdemDetalhes() {
           onConfirm={async () => {
             await handleAdvance(next);
             setShowConfirmAdvance(false);
-          }}
-        />
-      )}
-      {showOrcamentoModal && (
-        <OrcamentoModal
-          ordem={ordem}
-          onClose={() => setShowOrcamentoModal(false)}
-          onAdvance={async () => {
-            await handleAdvance("Orçamento Enviado");
-            setShowOrcamentoModal(false);
           }}
         />
       )}

@@ -3,9 +3,6 @@ interface OrcamentoWhatsAppParams {
   numero: string;
   link: string;
   empresaNome: string;
-  valor?: number;
-  observacoes?: string;
-  telefoneEmpresa?: string;
 }
 
 export function buildOrcamentoWhatsAppMessage({
@@ -13,38 +10,17 @@ export function buildOrcamentoWhatsAppMessage({
   numero,
   link,
   empresaNome,
-  valor,
-  observacoes,
-  telefoneEmpresa,
 }: OrcamentoWhatsAppParams): string {
-  const lines = [
+  return [
     `Ola, ${clienteNome}!`,
     "",
-    `O orcamento da sua Ordem de Servico *${numero}* esta pronto.`,
+    `O orcamento da sua Ordem de Servico ${numero} esta pronto.`,
     "",
-  ];
-
-  if (valor) {
-    lines.push(`Valor total: R$ ${valor.toFixed(2).replace(".", ",")}`, "");
-  }
-
-  if (observacoes) {
-    lines.push("Detalhes:", observacoes, "");
-  }
-
-  lines.push(
-    "Acompanhe em tempo real e responda ao orcamento pelo link:",
+    `Acesse para ver os detalhes e responder:`,
     link,
     "",
-  );
-
-  if (telefoneEmpresa) {
-    lines.push(`Em caso de duvidas, entre em contato: ${telefoneEmpresa}`, "");
-  }
-
-  lines.push(`*${empresaNome}*`);
-
-  return lines.join("\n");
+    empresaNome,
+  ].join("\n");
 }
 
 interface WhatsAppMessageParams {
@@ -65,9 +41,9 @@ export function buildOsConcluidaWhatsAppMessage({
   const lines = [
     `Ola, ${clienteNome}!`,
     "",
-    `Sua Ordem de Servico *${numero}* foi concluida.`,
+    `Sua Ordem de Servico ${numero} foi concluida.`,
     "",
-    "Acompanhe em tempo real:",
+    "Acompanhe pelo link:",
     link,
   ];
 
@@ -75,7 +51,7 @@ export function buildOsConcluidaWhatsAppMessage({
     lines.push("", "Baixe sua OS em PDF:", pdfUrl);
   }
 
-  lines.push("", "Obrigado pela preferencia!", `*${empresaNome}*`);
+  lines.push("", `Obrigado pela preferencia!`, empresaNome);
 
   return lines.join("\n");
 }

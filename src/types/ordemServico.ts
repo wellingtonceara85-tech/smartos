@@ -41,6 +41,25 @@ export interface ClienteResposta {
   criadoEm: Timestamp;
 }
 
+export interface PecaOrcamento {
+  descricao: string;
+  valor: number;
+}
+
+export interface Orcamento {
+  maoDeObra: number;
+  pecas: PecaOrcamento[];
+  outrasDespesas: number;
+  desconto: number;
+  total: number;
+  prazoExecucao: string;
+  garantia: string;
+  descricaoServicos: string;
+  observacoes: string;
+  fotos: FotoOS[];
+  criadoEm: Timestamp;
+}
+
 export interface OrdemServico {
   id: string;
   empresaId: string;
@@ -68,5 +87,6 @@ export interface OrdemServico {
   historico?: HistoricoItem[];
   garantia?: Garantia;
   clienteResposta?: ClienteResposta;
+  orcamento?: Orcamento;
   updatedAt: Timestamp;
 }

@@ -14,6 +14,7 @@ import { EditarCliente } from "./pages/EditarCliente";
 import { ClienteDetalhes } from "./pages/ClienteDetalhes";
 import { ConfiguracaoEmpresa } from "./pages/ConfiguracaoEmpresa";
 import { GerenciarUsuarios } from "./pages/GerenciarUsuarios";
+import { PrepararOrcamento } from "./pages/PrepararOrcamento";
 import { SmartTrackPublic } from "./pages/SmartTrackPublic";
 
 function PrivateRoute({ children }: { children: ReactNode }) {
@@ -104,6 +105,14 @@ function App() {
               element={
                 <PrivateRoute>
                   <EditarCliente />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/ordens/:id/orcamento"
+              element={
+                <PrivateRoute>
+                  <PrepararOrcamento />
                 </PrivateRoute>
               }
             />
