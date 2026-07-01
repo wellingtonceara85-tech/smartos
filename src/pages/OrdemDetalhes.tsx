@@ -406,17 +406,16 @@ export function OrdemDetalhes() {
                 Receber pagamento
               </Button>
               {pix && (
-                <Button
-                  variant="ghost"
-                  onClick={handleCopyPix}
-                >
-                  {pixCopied ? <Check size={14} className="mr-1.5" /> : <Copy size={14} className="mr-1.5" />}
-                  {pixCopied ? "Chave copiada!" : "Copiar chave PIX"}
-                </Button>
-                <Button variant="ghost" onClick={handlePixWhatsApp}>
-                  <Phone size={14} className="mr-1.5" />
-                  Enviar PIX por WhatsApp
-                </Button>
+                <>
+                  <Button variant="ghost" onClick={handleCopyPix}>
+                    {pixCopied ? <Check size={14} className="mr-1.5" /> : <Copy size={14} className="mr-1.5" />}
+                    {pixCopied ? "Chave copiada!" : "Copiar chave PIX"}
+                  </Button>
+                  <Button variant="ghost" onClick={handlePixWhatsApp}>
+                    <Phone size={14} className="mr-1.5" />
+                    Enviar PIX por WhatsApp
+                  </Button>
+                </>
               )}
               {nfEmissorUrl && !ordem.nfEmitida && (
                 <Button variant="ghost" onClick={() => setShowNfModal(true)}>
