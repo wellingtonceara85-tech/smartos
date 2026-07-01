@@ -373,3 +373,181 @@ export async function generateOsPdf(ordem: OrdemServico, empresa: Empresa): Prom
 
   return doc;
 }
+
+export async function generateReciboPdf(ordem: OrdemServico, empresa: Empresa): Promise<jsPDF> {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const pw = doc.internal.pageSize.getWidth();
+  const cw = pw - MARGIN_X * 2;
+  let y = 10;
+
+  // Logo + cabeçalho
+  const logoData = empresa.logoUrl ? await urlToDataUrl(empresa.logoUrl) : null;
+  if (logoData) {
+    const props = doc.getImageProperties(logoData);
+    const ratio = props.width / props.height;
+    let lw = LOGO_MAX_W, lh = LOGO_MAX_H;
+    if (ratio > lw / lh) lh = lw / ratio; else lw = lh * ratio;
+    const lx = pw / 2 - lw / 2;
+    doc.addImage(logoData, dataUrlFormat(logoData), lx, y, lw, lh);
+    y += lh + 4;
+  }
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.setTextColor(...INK);
+  doc.text(empresa.nome, pw / 2, y, { align: "center" });
+  y += 5;
+  if (empresa.cnpj) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...MUTED);
+    doc.text(`CNPJ: ${empresa.cnpj}`, pw / 2, y, { align: "center" });
+    y += 4;
+  }
+  if (empresa.telefone) {
+    doc.setFontSize(8);
+    doc.text(empresa.telefone, pw / 2, y, { align: "center" });
+    y += 4;
+  }
+  y += 2;
+
+  // Linha divisória
+  doc.setDrawColor(...BOX_BORDER);
+  doc.setLineWidth(0.3);
+  doc.line(MARGIN_X, y, pw - MARGIN_X, y);
+  y += 5;
+
+  // Título RECIBO
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.setTextColor(...ACCENT);
+  doc.text("RECIBO DE PAGAMENTO", pw / 2, y, { align: "center" });
+  y += 8;
+
+  // Box com dados da OS
+  doc.setFillColor(...BOX_BG);
+  doc.setDrawColor(...BOX_BORDER);
+  doc.roundedRect(MARGIN_X, y, cw, 22, 2, 2, "FD");
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(...MUTED);
+  doc.text("OS", MARGIN_X + 4, y + 6);
+  doc.text("Cliente", MARGIN_X + 4, y + 13);
+  doc.text("Equipamento", MARGIN_X + 4, y + 20);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...INK);
+  doc.text(formatOsNumero(ordem.numero), MARGIN_X + 28, y + 6);
+  doc.text(ordem.clienteNome, MARGIN_X + 28, y + 13);
+  doc.text(`${ordem.equipamentoMarca} ${ordem.equipamentoModelo}`, MARGIN_X + 28, y + 20);
+  y += 28;
+
+  // Box financeiro
+  const pagamento = ordem.pagamento;
+  if (pagamento) {
+    doc.setFillColor(22, 163, 74);
+    doc.roundedRect(MARGIN_X, y, cw, 30, 2, 2, "F");
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(255, 255, 255);
+    doc.text("TOTAL RECEBIDO", MARGIN_X + 4, y + 7);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.text(formatCurrency(pagamento.totalPago ?? pagamento.valor), pw / 2, y + 18, { align: "center" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.text(`via ${pagamento.formaPagamento}  ·  ${formatDate(pagamento.data)}`, pw / 2, y + 25, { align: "center" });
+    y += 36;
+
+    // Detalhamento se houver acréscimo/desconto
+    if (pagamento.acrescimo || pagamento.desconto) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...MUTED);
+      if (pagamento.valor !== pagamento.totalPago) {
+        doc.text(`Valor cobrado: ${formatCurrency(pagamento.valor)}`, MARGIN_X + 4, y);
+        y += 4;
+      }
+      if (pagamento.acrescimo) {
+        doc.text(`Acréscimo: + ${formatCurrency(pagamento.acrescimo)}`, MARGIN_X + 4, y);
+        y += 4;
+      }
+      if (pagamento.desconto) {
+        doc.text(`Desconto: - ${formatCurrency(pagamento.desconto)}`, MARGIN_X + 4, y);
+        y += 4;
+      }
+      y += 2;
+    }
+  }
+
+  // Serviços do orçamento
+  if (ordem.orcamento) {
+    y += 2;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(...INK);
+    doc.text("SERVIÇOS REALIZADOS", MARGIN_X, y);
+    y += 5;
+    doc.setLineWidth(0.2);
+    doc.setDrawColor(...BOX_BORDER);
+    doc.line(MARGIN_X, y, pw - MARGIN_X, y);
+    y += 4;
+
+    if (ordem.orcamento.descricaoServicos) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...INK);
+      const lines = doc.splitTextToSize(ordem.orcamento.descricaoServicos, cw);
+      doc.text(lines, MARGIN_X, y);
+      y += lines.length * 4 + 2;
+    }
+
+    for (const peca of ordem.orcamento.pecas ?? []) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...LABEL_GRAY);
+      doc.text(`· ${peca.descricao}`, MARGIN_X + 3, y);
+      doc.setTextColor(...INK);
+      doc.text(formatCurrency(peca.valor), pw - MARGIN_X, y, { align: "right" });
+      y += 4;
+    }
+    if (ordem.orcamento.maoDeObra > 0) {
+      doc.setTextColor(...LABEL_GRAY);
+      doc.text("Mão de obra", MARGIN_X + 3, y);
+      doc.setTextColor(...INK);
+      doc.text(formatCurrency(ordem.orcamento.maoDeObra), pw - MARGIN_X, y, { align: "right" });
+      y += 4;
+    }
+    if (ordem.orcamento.garantia) {
+      y += 3;
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(8);
+      doc.setTextColor(...MUTED);
+      doc.text(`Garantia: ${ordem.orcamento.garantia}`, MARGIN_X, y);
+      y += 4;
+    }
+  }
+
+  // Nota fiscal
+  if (ordem.nfEmitida && ordem.nfNumero) {
+    y += 4;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...MUTED);
+    doc.text(`NF-e emitida: ${ordem.nfNumero}`, MARGIN_X, y);
+    y += 5;
+  }
+
+  // Linha e rodapé
+  y += 4;
+  doc.setDrawColor(...BOX_BORDER);
+  doc.setLineWidth(0.3);
+  doc.line(MARGIN_X, y, pw - MARGIN_X, y);
+  y += 5;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(...MUTED);
+  doc.text(`Gerado em ${new Date().toLocaleDateString("pt-BR")} · SmartOS`, pw / 2, y, { align: "center" });
+
+  return doc;
+}

@@ -40,6 +40,13 @@ export function ConfiguracaoEmpresa() {
   const [logoError, setLogoError] = useState("");
   const logoInputRef = useRef<HTMLInputElement>(null);
 
+  // Seção Financeiro
+  const [pixChave, setPixChave] = useState("");
+  const [pixTipo, setPixTipo] = useState("");
+  const [pixFavorecido, setPixFavorecido] = useState("");
+  const [pixBanco, setPixBanco] = useState("");
+  const [nfEmissorUrl, setNfEmissorUrl] = useState("");
+
   // Seção 2 — garantia
   const [prazo, setPrazo] = useState(prazoGarantiaDias);
   const [textoGarantia, setTextoGarantia] = useState(garantiaTexto);
@@ -66,6 +73,11 @@ export function ConfiguracaoEmpresa() {
         setCnpj(data.cnpj ?? "");
         setTelefone(data.telefone ?? "");
         setEndereco(data.endereco ?? "");
+        setPixChave(data.pixChave ?? "");
+        setPixTipo(data.pixTipo ?? "");
+        setPixFavorecido(data.pixFavorecido ?? "");
+        setPixBanco(data.pixBanco ?? "");
+        setNfEmissorUrl(data.nfEmissorUrl ?? "");
       })
       .catch(() => setSaveError("Não foi possível carregar os dados da empresa. Tente recarregar a página."));
   }, [empresaId]);
@@ -159,6 +171,11 @@ export function ConfiguracaoEmpresa() {
         prazoGarantiaDias: prazo,
         garantiaTexto: textoGarantia.trim(),
         tiposEquipamento: tipos,
+        pixChave: pixChave.trim(),
+        pixTipo: pixTipo.trim(),
+        pixFavorecido: pixFavorecido.trim(),
+        pixBanco: pixBanco.trim(),
+        nfEmissorUrl: nfEmissorUrl.trim(),
       });
 
       await reloadConfig();
@@ -254,6 +271,71 @@ export function ConfiguracaoEmpresa() {
                 className="hidden"
               />
             </div>
+          </div>
+        </section>
+
+        {/* Seção Financeiro */}
+        <section className="surface-card">
+          <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            Financeiro
+          </h2>
+          <p className="mb-4 text-xs text-slate-400">
+            Usado no recibo, no SmartTrack e nas mensagens de WhatsApp.
+          </p>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Input
+                id="cfg-pix-chave"
+                label="Chave PIX"
+                value={pixChave}
+                onChange={(e) => setPixChave(e.target.value)}
+                placeholder="CPF, CNPJ, e-mail, telefone ou aleatória"
+                disabled={saving}
+              />
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="cfg-pix-tipo" className="text-[13px] font-medium text-slate-700">
+                  Tipo da chave
+                </label>
+                <select
+                  id="cfg-pix-tipo"
+                  value={pixTipo}
+                  onChange={(e) => setPixTipo(e.target.value)}
+                  disabled={saving}
+                  className="h-9.5 rounded-lg border border-slate-200 px-3 text-sm text-slate-900 outline-none transition-all duration-150 hover:border-slate-300 focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15"
+                >
+                  <option value="">Selecione</option>
+                  {["CPF", "CNPJ", "E-mail", "Telefone", "Aleatória"].map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Input
+                id="cfg-pix-favorecido"
+                label="Favorecido"
+                value={pixFavorecido}
+                onChange={(e) => setPixFavorecido(e.target.value)}
+                placeholder="Nome completo ou razão social"
+                disabled={saving}
+              />
+              <Input
+                id="cfg-pix-banco"
+                label="Banco (opcional)"
+                value={pixBanco}
+                onChange={(e) => setPixBanco(e.target.value)}
+                placeholder="Ex: Nubank, Bradesco..."
+                disabled={saving}
+              />
+            </div>
+            <Input
+              id="cfg-nf-url"
+              label="Link do emissor de Nota Fiscal (opcional)"
+              value={nfEmissorUrl}
+              onChange={(e) => setNfEmissorUrl(e.target.value)}
+              placeholder="https://app.emissornf.com.br/..."
+              disabled={saving}
+            />
           </div>
         </section>
 

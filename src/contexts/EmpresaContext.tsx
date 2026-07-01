@@ -7,6 +7,13 @@ import { EQUIPMENT_TYPES } from "../lib/equipmentTypes";
 
 export type UserRole = "admin" | "analista";
 
+export interface PixConfig {
+  chave: string;
+  tipo: string;
+  favorecido: string;
+  banco: string;
+}
+
 interface EmpresaContextValue {
   empresaId: string | null;
   empresaNome: string;
@@ -15,6 +22,8 @@ interface EmpresaContextValue {
   garantiaTexto: string;
   tiposEquipamento: string[];
   logoUrl: string | null;
+  pix: PixConfig | null;
+  nfEmissorUrl: string;
   loading: boolean;
   reloadConfig: () => Promise<void>;
 }
@@ -27,6 +36,8 @@ const EmpresaContext = createContext<EmpresaContextValue>({
   garantiaTexto: "",
   tiposEquipamento: EQUIPMENT_TYPES,
   logoUrl: null,
+  pix: null,
+  nfEmissorUrl: "",
   loading: true,
   reloadConfig: async () => {},
 });
@@ -42,6 +53,8 @@ export function EmpresaProvider({ children }: { children: ReactNode }) {
   const [tiposEquipamento, setTiposEquipamento] = useState<string[]>(EQUIPMENT_TYPES);
   const [empresaNome, setEmpresaNome] = useState("");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [pix, setPix] = useState<PixConfig | null>(null);
+  const [nfEmissorUrl, setNfEmissorUrl] = useState("");
   const [loading, setLoading] = useState(true);
 
   // ref para reloadConfig não fechar sobre um empresaId stale
@@ -56,6 +69,14 @@ export function EmpresaProvider({ children }: { children: ReactNode }) {
     setLogoUrl(typeof data?.logoUrl === "string" ? data.logoUrl : null);
     setGarantiaTexto(typeof data?.garantiaTexto === "string" ? data.garantiaTexto : "");
     setEmpresaNome(typeof data?.nome === "string" ? data.nome : "");
+    setNfEmissorUrl(typeof data?.nfEmissorUrl === "string" ? data.nfEmissorUrl : "");
+    const chave = typeof data?.pixChave === "string" ? data.pixChave : "";
+    setPix(chave ? {
+      chave,
+      tipo: typeof data?.pixTipo === "string" ? data.pixTipo : "",
+      favorecido: typeof data?.pixFavorecido === "string" ? data.pixFavorecido : "",
+      banco: typeof data?.pixBanco === "string" ? data.pixBanco : "",
+    } : null);
   }
 
   const reloadConfig = useCallback(async () => {
@@ -76,6 +97,8 @@ export function EmpresaProvider({ children }: { children: ReactNode }) {
       setGarantiaTexto("");
       setTiposEquipamento(EQUIPMENT_TYPES);
       setLogoUrl(null);
+      setPix(null);
+      setNfEmissorUrl("");
       setLoading(false);
       return;
     }
@@ -116,7 +139,7 @@ export function EmpresaProvider({ children }: { children: ReactNode }) {
 
   return (
     <EmpresaContext.Provider
-      value={{ empresaId, empresaNome, role, prazoGarantiaDias, garantiaTexto, tiposEquipamento, logoUrl, loading, reloadConfig }}
+      value={{ empresaId, empresaNome, role, prazoGarantiaDias, garantiaTexto, tiposEquipamento, logoUrl, pix, nfEmissorUrl, loading, reloadConfig }}
     >
       {children}
     </EmpresaContext.Provider>

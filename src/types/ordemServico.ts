@@ -1,12 +1,14 @@
 import type { Timestamp } from "firebase/firestore";
 
 export type OsStatus =
-  | "Aguardando Avaliação"
+  | "Recebida"
   | "Em Avaliação"
   | "Orçamento Enviado"
   | "Orçamento Aprovado"
   | "Em Reparo"
-  | "Aguardando Retirada"
+  | "Pronto para Retirada"
+  | "Recebimento"
+  | "Entregue"
   | "Concluída"
   | "Cancelada";
 
@@ -25,6 +27,9 @@ export interface HistoricoItem {
 
 export interface Pagamento {
   valor: number;
+  acrescimo: number;
+  desconto: number;
+  totalPago: number;
   formaPagamento: string;
   data: Timestamp;
 }
@@ -88,5 +93,7 @@ export interface OrdemServico {
   garantia?: Garantia;
   clienteResposta?: ClienteResposta;
   orcamento?: Orcamento;
+  nfEmitida?: boolean;
+  nfNumero?: string;
   updatedAt: Timestamp;
 }

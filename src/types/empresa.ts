@@ -10,5 +10,10 @@ export interface Empresa {
   prazoGarantiaDias?: number;
   garantiaTexto?: string;
   tiposEquipamento?: string[];
+  pixChave?: string;
+  pixTipo?: string;
+  pixFavorecido?: string;
+  pixBanco?: string;
+  nfEmissorUrl?: string;
   criadoEm: Timestamp;
 }

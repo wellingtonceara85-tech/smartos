@@ -23,6 +23,38 @@ export function buildOrcamentoWhatsAppMessage({
   ].join("\n");
 }
 
+interface ReciboWhatsAppParams {
+  clienteNome: string;
+  numero: string;
+  totalPago: number;
+  formaPagamento: string;
+  empresaNome: string;
+  pdfUrl?: string;
+}
+
+export function buildReciboWhatsAppMessage({
+  clienteNome,
+  numero,
+  totalPago,
+  formaPagamento,
+  empresaNome,
+  pdfUrl,
+}: ReciboWhatsAppParams): string {
+  const valorFormatado = `R$ ${totalPago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+  const lines = [
+    `Ola, ${clienteNome}!`,
+    "",
+    `Confirmamos o recebimento de ${valorFormatado} via ${formaPagamento} referente a Ordem de Servico ${numero}.`,
+    "",
+    "Obrigado pela preferencia!",
+  ];
+  if (pdfUrl) {
+    lines.push("", "Acesse seu recibo em PDF:", pdfUrl);
+  }
+  lines.push("", empresaNome);
+  return lines.join("\n");
+}
+
 interface WhatsAppMessageParams {
   clienteNome: string;
   numero: string;
