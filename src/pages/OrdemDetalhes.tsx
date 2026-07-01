@@ -168,6 +168,25 @@ export function OrdemDetalhes() {
   const next = getNextStatus(ordem.status);
   const isAdmin = role === "admin";
 
+  const RESPOSTA_TEXTO: Record<string, string> = {
+    aprovado: "Cliente aprovou o orçamento",
+    reprovado: "Cliente não aprovou o orçamento",
+    duvida: "Cliente solicitou ajustes no orçamento",
+  };
+
+  const historicoComResposta = (() => {
+    const base = ordem.historico ?? [];
+    if (!ordem.clienteResposta) return base;
+    const entrada = {
+      tipo: "observacao" as const,
+      texto: RESPOSTA_TEXTO[ordem.clienteResposta.tipo] +
+        (ordem.clienteResposta.mensagem ? `\n"${ordem.clienteResposta.mensagem}"` : ""),
+      autor: ordem.clienteNome,
+      criadoEm: ordem.clienteResposta.criadoEm,
+    };
+    return [...base, entrada].sort((a, b) => a.criadoEm.toMillis() - b.criadoEm.toMillis());
+  })();
+
   return (
     <AppShell title={formatOsNumero(ordem.numero)}>
       <div className="max-w-3xl space-y-6">
@@ -381,7 +400,7 @@ export function OrdemDetalhes() {
             Observações
           </h3>
           <Timeline
-            historico={ordem.historico ?? []}
+            historico={historicoComResposta}
             canAddObservation={permissions.canAddObservation}
             onAddObservation={handleAddObservation}
           />
