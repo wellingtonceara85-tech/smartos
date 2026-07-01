@@ -58,19 +58,16 @@ export function MobileDrawer({ open, onClose, children }: MobileDrawerProps) {
         role="dialog"
         aria-modal="true"
         aria-label="Menu de navegação"
-        className="absolute inset-y-0 left-0 flex w-64 flex-col bg-[#15152A] text-white shadow-2xl"
+        className="absolute inset-y-0 left-0 w-64 shadow-2xl"
       >
-        <div className="flex h-16 items-center justify-between px-5">
-          <span className="text-lg font-bold tracking-tight">SmartOS</span>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Fechar menu"
-            className="rounded-lg p-1.5 text-slate-300 hover:bg-white/10 hover:text-white"
-          >
-            <X size={20} />
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Fechar menu"
+          className="absolute top-3 right-3 z-10 rounded-lg p-1.5 text-slate-300 hover:bg-white/10 hover:text-white"
+        >
+          <X size={18} />
+        </button>
         {children}
       </div>
     </div>,
