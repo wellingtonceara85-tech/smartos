@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { arrayUnion, doc, serverTimestamp, Timestamp, updateDoc } from "firebase/firestore";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Send, Save, ChevronLeft } from "lucide-react";
 import { db } from "../lib/firebase";
 import { AppShell } from "../components/layout/AppShell";
 import { Button } from "../components/ui/Button";
@@ -14,6 +14,17 @@ import { formatCurrency } from "../lib/format";
 import { maskCurrencyInput } from "../lib/masks";
 import { buildOrcamentoWhatsAppMessage } from "../lib/whatsappMessage";
 import type { FotoOS } from "../types/ordemServico";
+
+const INPUT_CLS =
+  "h-9.5 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all duration-150 hover:border-slate-300 focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15";
+
+const TEXTAREA_CLS =
+  "w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all duration-150 hover:border-slate-300 focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15 resize-none leading-relaxed";
+
+const LABEL_CLS = "text-[13px] font-medium text-slate-700";
+
+const SECTION_TITLE_CLS =
+  "text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-4";
 
 interface PecaRow {
   descricao: string;
@@ -28,28 +39,23 @@ export function PrepararOrcamento() {
   const { empresaId, empresaNome } = useEmpresa();
   const { ordem, loading, error, reload } = useOrdemServico(id);
 
-  // Pre-fill from existing orcamento if present
   const oc = ordem?.orcamento;
 
   const [descricaoServicos, setDescricaoServicos] = useState(oc?.descricaoServicos ?? "");
   const [pecas, setPecas] = useState<PecaRow[]>(() =>
     (oc?.pecas ?? []).map((p) => ({
       descricao: p.descricao,
-      valorDisplay: formatCurrency(p.valor).replace("R$ ", "").replace("R$ ", ""),
+      valorDisplay: centsToDisplay(p.valor),
       valorCents: p.valor,
     }))
   );
-  const [maoDeObraDisplay, setMaoDeObraDisplay] = useState(
-    oc ? formatCurrency(oc.maoDeObra).replace("R$ ", "").replace("R$ ", "") : ""
-  );
+  const [maoDeObraDisplay, setMaoDeObraDisplay] = useState(oc ? centsToDisplay(oc.maoDeObra) : "");
   const [maoDeObraCents, setMaoDeObraCents] = useState(oc?.maoDeObra ?? 0);
   const [outrasDespesasDisplay, setOutrasDespesasDisplay] = useState(
-    oc ? formatCurrency(oc.outrasDespesas).replace("R$ ", "").replace("R$ ", "") : ""
+    oc ? centsToDisplay(oc.outrasDespesas) : ""
   );
   const [outrasDespesasCents, setOutrasDespesasCents] = useState(oc?.outrasDespesas ?? 0);
-  const [descontoDisplay, setDescontoDisplay] = useState(
-    oc ? formatCurrency(oc.desconto).replace("R$ ", "").replace("R$ ", "") : ""
-  );
+  const [descontoDisplay, setDescontoDisplay] = useState(oc ? centsToDisplay(oc.desconto) : "");
   const [descontoCents, setDescontoCents] = useState(oc?.desconto ?? 0);
   const [prazoExecucao, setPrazoExecucao] = useState(oc?.prazoExecucao ?? "");
   const [garantia, setGarantia] = useState(oc?.garantia ?? "");
@@ -101,7 +107,7 @@ export function PrepararOrcamento() {
     setDescontoCents(cents);
   }
 
-  function buildOrcamentoPayload() {
+  function buildPayload() {
     return {
       descricaoServicos: descricaoServicos.trim(),
       pecas: pecas
@@ -125,14 +131,14 @@ export function PrepararOrcamento() {
     setErroMsg("");
     try {
       await updateDoc(doc(db, "ordens", ordem.id), {
-        orcamento: buildOrcamentoPayload(),
+        orcamento: buildPayload(),
         valorOrcamento: totalCents,
         updatedAt: serverTimestamp(),
       });
       await reload();
       navigate(`/ordens/${ordem.id}`);
     } catch {
-      setErroMsg("Nao foi possivel salvar. Tente novamente.");
+      setErroMsg("Não foi possível salvar. Tente novamente.");
     } finally {
       setSaving(false);
     }
@@ -143,16 +149,15 @@ export function PrepararOrcamento() {
     setSending(true);
     setErroMsg("");
     try {
-      const autor = user?.email ?? "Usuario";
-      const payload = buildOrcamentoPayload();
+      const autor = user?.email ?? "Usuário";
       await updateDoc(doc(db, "ordens", ordem.id), {
-        orcamento: payload,
+        orcamento: buildPayload(),
         valorOrcamento: totalCents,
         status: "Orçamento Enviado",
         updatedAt: serverTimestamp(),
         historico: arrayUnion({
           tipo: "status",
-          texto: `Status alterado para "Orcamento Enviado".`,
+          texto: `Status alterado para "Orçamento Enviado".`,
           autor,
           criadoEm: Timestamp.now(),
           statusNovo: "Orçamento Enviado",
@@ -172,10 +177,9 @@ export function PrepararOrcamento() {
         ? `https://wa.me/55${tel}?text=${encodeURIComponent(msg)}`
         : `https://wa.me/?text=${encodeURIComponent(msg)}`;
       window.open(waUrl, "_blank");
-
       navigate(`/ordens/${ordem.id}`);
     } catch {
-      setErroMsg("Nao foi possivel enviar. Tente novamente.");
+      setErroMsg("Não foi possível enviar. Tente novamente.");
     } finally {
       setSending(false);
     }
@@ -183,10 +187,11 @@ export function PrepararOrcamento() {
 
   if (loading) {
     return (
-      <AppShell title="Preparar Orcamento">
-        <div className="space-y-4">
-          <div className="h-24 animate-pulse rounded-lg bg-slate-200" />
-          <div className="h-40 animate-pulse rounded-lg bg-slate-200" />
+      <AppShell title="Preparar Orçamento">
+        <div className="max-w-2xl space-y-4">
+          <div className="h-20 animate-pulse rounded-2xl bg-slate-200" />
+          <div className="h-40 animate-pulse rounded-2xl bg-slate-200" />
+          <div className="h-32 animate-pulse rounded-2xl bg-slate-200" />
         </div>
       </AppShell>
     );
@@ -194,8 +199,8 @@ export function PrepararOrcamento() {
 
   if (error || !ordem || (empresaId && ordem.empresaId !== empresaId)) {
     return (
-      <AppShell title="Preparar Orcamento">
-        <p className="text-sm text-slate-500">OS nao encontrada.</p>
+      <AppShell title="Preparar Orçamento">
+        <p className="text-sm text-slate-500">OS não encontrada.</p>
       </AppShell>
     );
   }
@@ -203,179 +208,201 @@ export function PrepararOrcamento() {
   const isEnviado = ordem.status === "Orçamento Enviado";
 
   return (
-    <AppShell title={`Orcamento — ${formatOsNumero(ordem.numero)}`}>
-      <div className="max-w-2xl space-y-6">
-        {/* Header info */}
+    <AppShell title={`Orçamento — ${formatOsNumero(ordem.numero)}`}>
+      <div className="max-w-2xl space-y-5 pb-32">
+
+        {/* Contexto da OS */}
         <div className="surface-card">
-          <p className="text-sm text-slate-500">
-            <span className="font-medium text-slate-900">{ordem.clienteNome}</span>
-            {" · "}
-            {ordem.equipamentoMarca} {ordem.equipamentoModelo}
-          </p>
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-0.5">
+              <p className="text-base font-semibold text-slate-900">{ordem.clienteNome}</p>
+              <p className="text-sm text-slate-500">
+                {ordem.equipamentoMarca} {ordem.equipamentoModelo}
+                {ordem.equipamentoTipo ? ` · ${ordem.equipamentoTipo}` : ""}
+              </p>
+            </div>
+            <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+              {formatOsNumero(ordem.numero)}
+            </span>
+          </div>
           {isEnviado && (
-            <p className="mt-2 rounded-md bg-[#2563EB]/8 px-3 py-2 text-sm text-[#2563EB]">
-              Este orcamento ja foi enviado ao cliente. Voce pode editar e reenviar.
-            </p>
+            <div className="mt-3 flex items-center gap-2 rounded-lg bg-[#2563EB]/8 border border-[#2563EB]/20 px-3 py-2.5">
+              <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#2563EB]" />
+              <p className="text-[13px] text-[#2563EB]">
+                Orçamento já enviado. Você pode editar e reenviar.
+              </p>
+            </div>
           )}
         </div>
 
         {erroMsg && (
-          <p className="rounded-md bg-[#DC2626]/10 px-4 py-3 text-sm text-[#DC2626]">{erroMsg}</p>
+          <div className="rounded-lg border border-[#DC2626]/20 bg-[#DC2626]/8 px-4 py-3">
+            <p className="text-sm text-[#DC2626]">{erroMsg}</p>
+          </div>
         )}
 
-        {/* Descricao dos servicos */}
-        <section className="surface-card space-y-3">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Descricao dos Servicos
-          </h3>
+        {/* Descrição dos serviços */}
+        <section className="surface-card">
+          <p className={SECTION_TITLE_CLS}>Descrição dos Serviços</p>
           <textarea
             value={descricaoServicos}
             onChange={(e) => setDescricaoServicos(e.target.value)}
-            placeholder="Descreva os servicos que serao realizados..."
+            placeholder="Descreva os serviços que serão realizados..."
             rows={4}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all hover:border-slate-300 focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15 resize-none"
+            className={TEXTAREA_CLS}
           />
         </section>
 
-        {/* Pecas e materiais */}
-        <section className="surface-card space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-              Pecas e Materiais
-            </h3>
+        {/* Peças e materiais */}
+        <section className="surface-card">
+          <div className="flex items-center justify-between mb-4">
+            <p className={SECTION_TITLE_CLS} style={{ marginBottom: 0 }}>Peças e Materiais</p>
             <button
               type="button"
               onClick={addPeca}
-              className="flex items-center gap-1.5 rounded-md bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200 transition-colors"
+              className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-medium text-slate-700 shadow-sm transition-all duration-150 hover:border-[#2563EB]/40 hover:text-[#2563EB] hover:shadow active:scale-[0.98]"
             >
-              <Plus size={13} />
-              Adicionar peca
+              <Plus size={13} strokeWidth={2.5} />
+              Adicionar peça
             </button>
           </div>
 
           {pecas.length === 0 ? (
-            <p className="text-sm text-slate-400">Nenhuma peca adicionada.</p>
+            <div className="rounded-lg border border-dashed border-slate-200 px-4 py-6 text-center">
+              <p className="text-sm text-slate-400">Nenhuma peça adicionada.</p>
+              <button
+                type="button"
+                onClick={addPeca}
+                className="mt-2 text-[13px] text-[#2563EB] hover:underline"
+              >
+                + Adicionar primeira peça
+              </button>
+            </div>
           ) : (
             <div className="space-y-2">
+              {/* Cabeçalho das colunas */}
+              <div className="flex gap-2 px-0.5">
+                <p className="flex-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">Descrição</p>
+                <p className="w-32 text-[11px] font-medium uppercase tracking-wide text-slate-400">Valor</p>
+                <div className="w-8" />
+              </div>
+
               {pecas.map((peca, i) => (
                 <div key={i} className="flex gap-2 items-center">
                   <input
                     type="text"
                     value={peca.descricao}
                     onChange={(e) => updatePecaDescricao(i, e.target.value)}
-                    placeholder="Descricao da peca"
-                    className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all hover:border-slate-300 focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15"
+                    placeholder="Ex: Tela LCD, Bateria..."
+                    className={`flex-1 ${INPUT_CLS}`}
                   />
                   <div className="relative w-32">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">R$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400">
+                      R$
+                    </span>
                     <input
                       type="text"
                       inputMode="numeric"
                       value={peca.valorDisplay}
                       onChange={(e) => updatePecaValor(i, e.target.value)}
                       placeholder="0,00"
-                      className="w-full rounded-lg border border-slate-200 pl-8 pr-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all hover:border-slate-300 focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15"
+                      className={`w-full h-9.5 rounded-lg border border-slate-200 pl-8 pr-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all duration-150 hover:border-slate-300 focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15`}
                     />
                   </div>
                   <button
                     type="button"
                     onClick={() => removePeca(i)}
-                    className="p-2 text-slate-400 hover:text-[#DC2626] transition-colors"
+                    className="flex h-9.5 w-8 shrink-0 items-center justify-center rounded-lg text-slate-300 transition-all duration-150 hover:bg-[#DC2626]/8 hover:text-[#DC2626]"
                   >
-                    <Trash2 size={15} />
+                    <Trash2 size={14} />
                   </button>
                 </div>
               ))}
-            </div>
-          )}
 
-          {pecas.length > 0 && (
-            <div className="flex justify-end pt-1">
-              <p className="text-xs text-slate-500">
-                Subtotal pecas: <span className="font-semibold text-slate-900">{formatCurrency(totalPecasCents)}</span>
-              </p>
+              <div className="flex justify-end border-t border-slate-100 pt-2">
+                <p className="text-[13px] text-slate-500">
+                  Subtotal peças:{" "}
+                  <span className="font-semibold text-slate-900">{formatCurrency(totalPecasCents)}</span>
+                </p>
+              </div>
             </div>
           )}
         </section>
 
         {/* Valores */}
-        <section className="surface-card space-y-4">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Valores</h3>
+        <section className="surface-card">
+          <p className={SECTION_TITLE_CLS}>Valores</p>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <CurrencyField
-              label="Mao de obra"
-              value={maoDeObraDisplay}
-              onChange={handleMaoDeObra}
-            />
-            <CurrencyField
-              label="Outras despesas"
-              value={outrasDespesasDisplay}
-              onChange={handleOutrasDespesas}
-            />
-            <CurrencyField
-              label="Desconto"
-              value={descontoDisplay}
-              onChange={handleDesconto}
-            />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <CurrencyField label="Mão de obra" value={maoDeObraDisplay} onChange={handleMaoDeObra} />
+            <CurrencyField label="Outras despesas" value={outrasDespesasDisplay} onChange={handleOutrasDespesas} />
+            <CurrencyField label="Desconto" value={descontoDisplay} onChange={handleDesconto} />
           </div>
 
-          <div className="rounded-lg bg-slate-50 border border-slate-200 px-4 py-3 flex justify-between items-center">
-            <span className="text-sm font-semibold text-slate-700">Total do Orcamento</span>
-            <span className="text-lg font-bold text-[#16A34A]">{formatCurrency(totalCents)}</span>
+          {/* Total */}
+          <div className="mt-4 overflow-hidden rounded-xl bg-gradient-to-r from-[#16A34A] to-[#15803d] px-5 py-4 shadow-sm shadow-green-800/15">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-green-200">
+                  Total do Orçamento
+                </p>
+                {descontoCents > 0 && (
+                  <p className="mt-0.5 text-xs text-green-300 line-through">
+                    {formatCurrency(subtotalCents)}
+                  </p>
+                )}
+              </div>
+              <p className="text-2xl font-bold text-white tracking-tight">
+                {formatCurrency(totalCents)}
+              </p>
+            </div>
           </div>
         </section>
 
         {/* Prazo e garantia */}
-        <section className="surface-card space-y-3">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Prazo e Garantia
-          </h3>
+        <section className="surface-card">
+          <p className={SECTION_TITLE_CLS}>Prazo e Garantia</p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="flex flex-col gap-1">
-              <label className="text-[13px] font-medium text-slate-700">Prazo de execucao</label>
+            <FieldWrapper label="Prazo de execução">
               <input
                 type="text"
                 value={prazoExecucao}
                 onChange={(e) => setPrazoExecucao(e.target.value)}
-                placeholder="Ex: 3 a 5 dias uteis"
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all hover:border-slate-300 focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15"
+                placeholder="Ex: 3 a 5 dias úteis"
+                className={INPUT_CLS}
               />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-[13px] font-medium text-slate-700">Garantia</label>
+            </FieldWrapper>
+            <FieldWrapper label="Garantia">
               <input
                 type="text"
                 value={garantia}
                 onChange={(e) => setGarantia(e.target.value)}
                 placeholder="Ex: 90 dias de garantia"
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all hover:border-slate-300 focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15"
+                className={INPUT_CLS}
               />
-            </div>
+            </FieldWrapper>
           </div>
         </section>
 
-        {/* Observacoes */}
-        <section className="surface-card space-y-3">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Observacoes ao Cliente
-          </h3>
+        {/* Observações ao cliente */}
+        <section className="surface-card">
+          <div className="flex items-baseline justify-between mb-4">
+            <p className={SECTION_TITLE_CLS} style={{ marginBottom: 0 }}>Observações ao Cliente</p>
+            <span className="text-[11px] text-slate-400">{observacoes.length}/600</span>
+          </div>
           <textarea
             value={observacoes}
             onChange={(e) => setObservacoes(e.target.value)}
-            placeholder="Informacoes adicionais para o cliente..."
+            placeholder="Informações adicionais para o cliente (opcional)..."
             rows={3}
             maxLength={600}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all hover:border-slate-300 focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15 resize-none"
+            className={TEXTAREA_CLS}
           />
-          <p className="text-xs text-slate-400">{observacoes.length}/600</p>
         </section>
 
-        {/* Fotos do orcamento */}
-        <section className="surface-card space-y-3">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Fotos (opcional)
-          </h3>
+        {/* Fotos */}
+        <section className="surface-card">
+          <p className={SECTION_TITLE_CLS}>Fotos do Orçamento</p>
           <PhotosBlock
             empresaId={empresaId ?? ordem.empresaId}
             osId={ordem.id}
@@ -385,18 +412,36 @@ export function PrepararOrcamento() {
             onChange={(f) => { setFotos(f); return Promise.resolve(); }}
           />
         </section>
+      </div>
 
-        {/* Acoes */}
-        <div className="flex flex-wrap gap-3 pb-8">
-          <Button onClick={handleEnviarOrcamento} disabled={sending || saving}>
-            {sending ? "Enviando..." : "Enviar Orcamento ao Cliente"}
+      {/* Barra de ações — sticky no rodapé */}
+      <div className="fixed bottom-0 left-0 right-0 z-10 border-t border-slate-200 bg-white/90 px-4 py-3 backdrop-blur-sm sm:left-64">
+        <div className="mx-auto flex max-w-2xl flex-wrap items-center gap-2">
+          <Button
+            onClick={handleEnviarOrcamento}
+            loading={sending}
+            disabled={sending || saving}
+          >
+            <Send size={14} />
+            Enviar Orçamento
           </Button>
-          <Button variant="ghost" onClick={handleSalvarRascunho} disabled={saving || sending}>
-            {saving ? "Salvando..." : "Salvar rascunho"}
+          <Button
+            variant="ghost"
+            onClick={handleSalvarRascunho}
+            loading={saving}
+            disabled={saving || sending}
+          >
+            <Save size={14} />
+            Salvar rascunho
           </Button>
-          <Button variant="ghost" onClick={() => navigate(`/ordens/${ordem.id}`)}>
-            Cancelar
-          </Button>
+          <button
+            type="button"
+            onClick={() => navigate(`/ordens/${ordem.id}`)}
+            className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 transition-colors ml-auto"
+          >
+            <ChevronLeft size={15} />
+            Voltar
+          </button>
         </div>
       </div>
     </AppShell>
@@ -413,19 +458,35 @@ function CurrencyField({
   onChange: (raw: string) => void;
 }) {
   return (
-    <div className="flex flex-col gap-1">
-      <label className="text-[13px] font-medium text-slate-700">{label}</label>
+    <div className="flex flex-col gap-1.5">
+      <label className={LABEL_CLS}>{label}</label>
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">R$</span>
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400">
+          R$
+        </span>
         <input
           type="text"
           inputMode="numeric"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="0,00"
-          className="w-full rounded-lg border border-slate-200 pl-8 pr-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all hover:border-slate-300 focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15"
+          className={`h-9.5 w-full rounded-lg border border-slate-200 pl-8 pr-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all duration-150 hover:border-slate-300 focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15`}
         />
       </div>
     </div>
   );
+}
+
+function FieldWrapper({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className={LABEL_CLS}>{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function centsToDisplay(cents: number): string {
+  if (!cents) return "";
+  return (cents / 100).toFixed(2).replace(".", ",");
 }
