@@ -13,6 +13,7 @@ import { OsPdfActions } from "../components/os/OsPdfActions";
 import { CancelOsModal } from "../components/os/CancelOsModal";
 import { PaymentModal, type PaymentData } from "../components/os/PaymentModal";
 import { ConfirmModal } from "../components/os/ConfirmModal";
+import { Modal } from "../components/ui/Modal";
 import { useAuth } from "../contexts/AuthContext";
 import { useEmpresa } from "../contexts/EmpresaContext";
 import { useOrdemServico } from "../hooks/useOrdemServico";
@@ -20,7 +21,73 @@ import { getNextStatus, getOsPermissions } from "../lib/osFlow";
 import { OS_STATUS_VARIANT } from "../lib/osStatus";
 import { formatCurrency, formatDate } from "../lib/format";
 import { formatOsNumero } from "../lib/osNumero";
-import type { FotoOS } from "../types/ordemServico";
+import { buildOrcamentoWhatsAppMessage } from "../lib/whatsappMessage";
+import type { FotoOS, OrdemServico } from "../types/ordemServico";
+
+interface OrcamentoModalProps {
+  ordem: OrdemServico;
+  onClose: () => void;
+  onAdvance: () => Promise<void>;
+}
+
+function OrcamentoModal({ ordem, onClose, onAdvance }: OrcamentoModalProps) {
+  const { empresaNome } = useEmpresa();
+  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+  const link = `${window.location.origin}${base}/track/${ordem.token}`;
+
+  async function handleEnviarWhatsApp() {
+    await onAdvance();
+    const msg = buildOrcamentoWhatsAppMessage({
+      clienteNome: ordem.clienteNome,
+      numero: formatOsNumero(ordem.numero),
+      link,
+      empresaNome,
+      valor: ordem.valorOrcamento,
+    });
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+  }
+
+  return (
+    <Modal
+      title="Enviar Orçamento"
+      onClose={onClose}
+      footer={
+        <div className="flex gap-3">
+          <Button variant="ghost" onClick={onAdvance}>
+            Só avançar status
+          </Button>
+          <Button onClick={handleEnviarWhatsApp}>
+            Enviar via WhatsApp
+          </Button>
+        </div>
+      }
+    >
+      <div className="space-y-4">
+        <p className="text-sm text-slate-600">
+          A OS será marcada como <strong>Orçamento Enviado</strong>. Deseja notificar o cliente?
+        </p>
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-slate-500">Cliente</span>
+            <span className="font-medium text-slate-900">{ordem.clienteNome}</span>
+          </div>
+          {ordem.clienteTelefone && (
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-500">Telefone</span>
+              <span className="font-medium text-slate-900">{ordem.clienteTelefone}</span>
+            </div>
+          )}
+          {ordem.valorOrcamento != null && (
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-500">Valor do orçamento</span>
+              <span className="font-semibold text-[#16A34A]">{formatCurrency(ordem.valorOrcamento)}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </Modal>
+  );
+}
 
 export function OrdemDetalhes() {
   const { id } = useParams<{ id: string }>();
@@ -32,6 +99,7 @@ export function OrdemDetalhes() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showConfirmAdvance, setShowConfirmAdvance] = useState(false);
+  const [showOrcamentoModal, setShowOrcamentoModal] = useState(false);
   const [actionError, setActionError] = useState("");
 
   const autor = user?.email ?? "Usuário";
@@ -200,7 +268,11 @@ export function OrdemDetalhes() {
           <div className="mt-4 flex flex-wrap gap-3">
             {permissions.canAdvance && next && (
               <Button
-                onClick={() => (next === "Concluída" ? setShowConfirmAdvance(true) : handleAdvance(next))}
+                onClick={() => {
+                  if (next === "Concluída") setShowConfirmAdvance(true);
+                  else if (next === "Orçamento Enviado") setShowOrcamentoModal(true);
+                  else handleAdvance(next);
+                }}
               >
                 Avançar para {next}
               </Button>
@@ -357,6 +429,16 @@ export function OrdemDetalhes() {
           onConfirm={async () => {
             await handleAdvance(next);
             setShowConfirmAdvance(false);
+          }}
+        />
+      )}
+      {showOrcamentoModal && (
+        <OrcamentoModal
+          ordem={ordem}
+          onClose={() => setShowOrcamentoModal(false)}
+          onAdvance={async () => {
+            await handleAdvance("Orçamento Enviado");
+            setShowOrcamentoModal(false);
           }}
         />
       )}

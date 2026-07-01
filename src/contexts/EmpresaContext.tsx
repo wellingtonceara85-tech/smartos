@@ -9,6 +9,7 @@ export type UserRole = "admin" | "analista";
 
 interface EmpresaContextValue {
   empresaId: string | null;
+  empresaNome: string;
   role: UserRole | null;
   prazoGarantiaDias: number;
   garantiaTexto: string;
@@ -20,6 +21,7 @@ interface EmpresaContextValue {
 
 const EmpresaContext = createContext<EmpresaContextValue>({
   empresaId: null,
+  empresaNome: "",
   role: null,
   prazoGarantiaDias: 90,
   garantiaTexto: "",
@@ -38,6 +40,7 @@ export function EmpresaProvider({ children }: { children: ReactNode }) {
   const [prazoGarantiaDias, setPrazoGarantiaDias] = useState(PRAZO_GARANTIA_DEFAULT);
   const [garantiaTexto, setGarantiaTexto] = useState("");
   const [tiposEquipamento, setTiposEquipamento] = useState<string[]>(EQUIPMENT_TYPES);
+  const [empresaNome, setEmpresaNome] = useState("");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -52,6 +55,7 @@ export function EmpresaProvider({ children }: { children: ReactNode }) {
     setTiposEquipamento(Array.isArray(tipos) && tipos.length > 0 ? (tipos as string[]) : EQUIPMENT_TYPES);
     setLogoUrl(typeof data?.logoUrl === "string" ? data.logoUrl : null);
     setGarantiaTexto(typeof data?.garantiaTexto === "string" ? data.garantiaTexto : "");
+    setEmpresaNome(typeof data?.nome === "string" ? data.nome : "");
   }
 
   const reloadConfig = useCallback(async () => {
@@ -66,6 +70,7 @@ export function EmpresaProvider({ children }: { children: ReactNode }) {
 
     if (!user) {
       setEmpresaId(null);
+      setEmpresaNome("");
       setRole(null);
       setPrazoGarantiaDias(PRAZO_GARANTIA_DEFAULT);
       setGarantiaTexto("");
@@ -111,7 +116,7 @@ export function EmpresaProvider({ children }: { children: ReactNode }) {
 
   return (
     <EmpresaContext.Provider
-      value={{ empresaId, role, prazoGarantiaDias, garantiaTexto, tiposEquipamento, logoUrl, loading, reloadConfig }}
+      value={{ empresaId, empresaNome, role, prazoGarantiaDias, garantiaTexto, tiposEquipamento, logoUrl, loading, reloadConfig }}
     >
       {children}
     </EmpresaContext.Provider>
