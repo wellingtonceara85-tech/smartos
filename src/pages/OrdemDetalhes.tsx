@@ -228,6 +228,30 @@ export function OrdemDetalhes() {
     });
   }
 
+  function handlePixWhatsApp() {
+    if (!pix || !ordem) return;
+    const linhas = [
+      `Olá, ${ordem.clienteNome}!`,
+      "",
+      `Segue a chave PIX para pagamento da OS ${formatOsNumero(ordem.numero)}:`,
+      "",
+      `*Chave:* ${pix.chave}`,
+      ...(pix.tipo ? [`*Tipo:* ${pix.tipo}`] : []),
+      ...(pix.favorecido ? [`*Favorecido:* ${pix.favorecido}`] : []),
+      ...(pix.banco ? [`*Banco:* ${pix.banco}`] : []),
+      "",
+      `*Valor:* ${formatCurrency(valorOrcamento)}`,
+      "",
+      empresaNome,
+    ];
+    const msg = linhas.join("\n");
+    const telefone = ordem.clienteTelefone?.replace(/\D/g, "");
+    const url = telefone
+      ? `https://wa.me/55${telefone}?text=${encodeURIComponent(msg)}`
+      : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    window.open(url, "_blank");
+  }
+
   async function handleAddObservation(texto: string) {
     setActionError("");
     try {
@@ -388,6 +412,10 @@ export function OrdemDetalhes() {
                 >
                   {pixCopied ? <Check size={14} className="mr-1.5" /> : <Copy size={14} className="mr-1.5" />}
                   {pixCopied ? "Chave copiada!" : "Copiar chave PIX"}
+                </Button>
+                <Button variant="ghost" onClick={handlePixWhatsApp}>
+                  <Phone size={14} className="mr-1.5" />
+                  Enviar PIX por WhatsApp
                 </Button>
               )}
               {nfEmissorUrl && !ordem.nfEmitida && (
