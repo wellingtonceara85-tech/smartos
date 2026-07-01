@@ -210,7 +210,11 @@ export function OrdemDetalhes() {
         }
       }
 
-      const pdf = await generateReciboPdf(ordem, empresaObj, clienteInfo);
+      const paymentDate = ordem.pagamento?.data.toDate() ?? new Date();
+      const garantiaValidade = ordem.garantia?.dataValidade?.toDate()
+        ?? new Date(paymentDate.getTime() + prazoGarantiaDias * 24 * 60 * 60 * 1000);
+
+      const pdf = await generateReciboPdf(ordem, empresaObj, clienteInfo, garantiaValidade);
       pdf.save(`Recibo_OS_${ordem.numero}.pdf`);
     } catch {
       setActionError("Não foi possível gerar o PDF.");

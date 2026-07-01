@@ -381,7 +381,12 @@ interface ClienteInfo {
   email?: string;
 }
 
-export async function generateReciboPdf(ordem: OrdemServico, empresa: Empresa, cliente?: ClienteInfo): Promise<jsPDF> {
+export async function generateReciboPdf(
+  ordem: OrdemServico,
+  empresa: Empresa,
+  cliente?: ClienteInfo,
+  garantiaValidade?: Date,
+): Promise<jsPDF> {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pw = doc.internal.pageSize.getWidth();
   const cw = pw - MARGIN_X * 2;
@@ -552,6 +557,31 @@ export async function generateReciboPdf(ordem: OrdemServico, empresa: Empresa, c
       doc.text(`Garantia: ${ordem.orcamento.garantia}`, MARGIN_X, y);
       y += 4;
     }
+  }
+
+  // Box de garantia com vencimento
+  const dataValidade = garantiaValidade ?? ordem.garantia?.dataValidade?.toDate();
+  if (dataValidade) {
+    y += 4;
+    doc.setFillColor(240, 253, 244); // verde bem claro
+    doc.setDrawColor(134, 239, 172); // verde médio
+    doc.roundedRect(MARGIN_X, y, cw, 14, 2, 2, "FD");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(22, 101, 52); // verde escuro
+    doc.text("GARANTIA DO SERVIÇO", MARGIN_X + 4, y + 5.5);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.text(
+      `Válida até ${dataValidade.toLocaleDateString("pt-BR")}`,
+      pw - MARGIN_X - 4,
+      y + 5.5,
+      { align: "right" },
+    );
+    doc.setFontSize(7.5);
+    doc.setTextColor(21, 128, 61);
+    doc.text("Guarde este recibo. Apresente-o em caso de acionamento da garantia.", MARGIN_X + 4, y + 11);
+    y += 20;
   }
 
   // Nota fiscal
