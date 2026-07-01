@@ -46,17 +46,17 @@ export function PrepararOrcamento() {
     (oc?.pecas ?? []).map((p) => ({
       descricao: p.descricao,
       valorDisplay: centsToDisplay(p.valor),
-      valorCents: p.valor,
+      valorCents: Math.round(p.valor * 100),
     }))
   );
   const [maoDeObraDisplay, setMaoDeObraDisplay] = useState(oc ? centsToDisplay(oc.maoDeObra) : "");
-  const [maoDeObraCents, setMaoDeObraCents] = useState(oc?.maoDeObra ?? 0);
+  const [maoDeObraCents, setMaoDeObraCents] = useState(oc ? Math.round(oc.maoDeObra * 100) : 0);
   const [outrasDespesasDisplay, setOutrasDespesasDisplay] = useState(
     oc ? centsToDisplay(oc.outrasDespesas) : ""
   );
-  const [outrasDespesasCents, setOutrasDespesasCents] = useState(oc?.outrasDespesas ?? 0);
+  const [outrasDespesasCents, setOutrasDespesasCents] = useState(oc ? Math.round(oc.outrasDespesas * 100) : 0);
   const [descontoDisplay, setDescontoDisplay] = useState(oc ? centsToDisplay(oc.desconto) : "");
-  const [descontoCents, setDescontoCents] = useState(oc?.desconto ?? 0);
+  const [descontoCents, setDescontoCents] = useState(oc ? Math.round(oc.desconto * 100) : 0);
   const [prazoExecucao, setPrazoExecucao] = useState(oc?.prazoExecucao ?? "");
   const [garantia, setGarantia] = useState(oc?.garantia ?? "");
   const [observacoes, setObservacoes] = useState(oc?.observacoes ?? "");
@@ -112,11 +112,11 @@ export function PrepararOrcamento() {
       descricaoServicos: descricaoServicos.trim(),
       pecas: pecas
         .filter((p) => p.descricao.trim())
-        .map((p) => ({ descricao: p.descricao.trim(), valor: p.valorCents })),
-      maoDeObra: maoDeObraCents,
-      outrasDespesas: outrasDespesasCents,
-      desconto: descontoCents,
-      total: totalCents,
+        .map((p) => ({ descricao: p.descricao.trim(), valor: p.valorCents / 100 })),
+      maoDeObra: maoDeObraCents / 100,
+      outrasDespesas: outrasDespesasCents / 100,
+      desconto: descontoCents / 100,
+      total: totalCents / 100,
       prazoExecucao: prazoExecucao.trim(),
       garantia: garantia.trim(),
       observacoes: observacoes.trim(),
@@ -132,7 +132,7 @@ export function PrepararOrcamento() {
     try {
       await updateDoc(doc(db, "ordens", ordem.id), {
         orcamento: buildPayload(),
-        valorOrcamento: totalCents,
+        valorOrcamento: totalCents / 100,
         updatedAt: serverTimestamp(),
       });
       await reload();
@@ -152,7 +152,7 @@ export function PrepararOrcamento() {
       const autor = user?.email ?? "Usuário";
       await updateDoc(doc(db, "ordens", ordem.id), {
         orcamento: buildPayload(),
-        valorOrcamento: totalCents,
+        valorOrcamento: totalCents / 100,
         status: "Orçamento Enviado",
         updatedAt: serverTimestamp(),
         historico: arrayUnion({
@@ -322,7 +322,7 @@ export function PrepararOrcamento() {
               <div className="flex justify-end border-t border-slate-100 pt-2">
                 <p className="text-[13px] text-slate-500">
                   Subtotal peças:{" "}
-                  <span className="font-semibold text-slate-900">{formatCurrency(totalPecasCents)}</span>
+                  <span className="font-semibold text-slate-900">{formatCurrency(totalPecasCents / 100)}</span>
                 </p>
               </div>
             </div>
@@ -348,12 +348,12 @@ export function PrepararOrcamento() {
                 </p>
                 {descontoCents > 0 && (
                   <p className="mt-0.5 text-xs text-green-300 line-through">
-                    {formatCurrency(subtotalCents)}
+                    {formatCurrency(subtotalCents / 100)}
                   </p>
                 )}
               </div>
               <p className="text-2xl font-bold text-white tracking-tight">
-                {formatCurrency(totalCents)}
+                {formatCurrency(totalCents / 100)}
               </p>
             </div>
           </div>
@@ -486,7 +486,8 @@ function FieldWrapper({ label, children }: { label: string; children: React.Reac
   );
 }
 
-function centsToDisplay(cents: number): string {
-  if (!cents) return "";
-  return (cents / 100).toFixed(2).replace(".", ",");
+// valor salvo em reais → string para o input mascarado (ex: 50.00 → "5000" → maskCurrencyInput mostra "50,00")
+function centsToDisplay(reais: number): string {
+  if (!reais) return "";
+  return String(Math.round(reais * 100));
 }
